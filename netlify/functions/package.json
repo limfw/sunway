@@ -1,0 +1,8 @@
+{
+  "name": "tracking-system",
+  "version": "1.0.0",
+  "dependencies": {
+    "google-auth-library": "^8.7.0",
+    "googleapis": "^105.0.0"
+  }
+}
