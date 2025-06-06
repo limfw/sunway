@@ -1,6 +1,6 @@
 import streamlit as st
 import random
-import time 
+import time
 from collections import defaultdict, Counter
 
 # --- Label Map ---
@@ -20,7 +20,7 @@ if "round" not in st.session_state:
     st.session_state.ai_streak = 0
     st.session_state.max_player_streak = 0
     st.session_state.max_ai_streak = 0
-    st.session_state.timer_start = time.time()  # Timer starts here
+    st.session_state.timer_start = time.time()
 
 # --- Countdown Clock ---
 remaining_time = 60 - int(time.time() - st.session_state.timer_start)
@@ -28,22 +28,21 @@ if remaining_time <= 0:
     remaining_time = 0
     st.session_state.game_over = True
 
+# --- Game Over Check ---
+def is_game_over():
+    return st.session_state.game_over or sum(st.session_state.stats.values()) >= 60
+
 # --- Reset Game ---
 def reset_game():
     for key in list(st.session_state.keys()):
         del st.session_state[key]
     st.session_state.timer_start = time.time()
 
-# --- Game Over Check ---
-def is_game_over():
-    return st.session_state.game_over or sum(st.session_state.stats.values()) >= 60
-
-
 # --- Enhanced AI Class ---
 class RPS_AI:
     def __init__(self):
         self.reset()
-        
+
     def reset(self):
         self.move_counts = {'R': 1, 'P': 1, 'S': 1}
         self.last_player_moves = []
@@ -51,14 +50,14 @@ class RPS_AI:
         self.pattern_memory = defaultdict(list)
         self.transition_counts = defaultdict(lambda: {'R': 1, 'P': 1, 'S': 1})
         self.move_sequences = defaultdict(int)
-        
+
     def get_move(self):
         base_randomness = max(0.05, 0.2 - (st.session_state.round * 0.005))
         if random.random() < base_randomness:
             return random.choice(['R', 'P', 'S'])
         predicted_move = self._predict_player_move()
         return self._counter_move(predicted_move)
-    
+
     def _predict_player_move(self):
         moves = self.last_player_moves
         if len(moves) >= 4:
@@ -96,12 +95,12 @@ class RPS_AI:
             if rand <= cumulative:
                 return move
         return random.choice(['R', 'P', 'S'])
-    
+
     def _counter_move(self, predicted_move):
         if random.random() < 0.15:
             return random.choice(['R', 'P', 'S'])
         return {'R': 'P', 'P': 'S', 'S': 'R'}[predicted_move]
-    
+
     def update(self, player_move, result):
         self.move_counts[player_move] += 1
         self.last_player_moves.append(player_move)
@@ -129,28 +128,15 @@ def determine_winner(ai_move, player_move):
         return 'AI'
     return 'Player'
 
-def reset_game():
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
-
-def is_game_over():
-    return sum(st.session_state.stats.values()) >= 60
-
 def update_streaks(result):
     if result == 'Player':
         st.session_state.player_streak += 1
         st.session_state.ai_streak = 0
-        st.session_state.max_player_streak = max(
-            st.session_state.max_player_streak,
-            st.session_state.player_streak
-        )
+        st.session_state.max_player_streak = max(st.session_state.max_player_streak, st.session_state.player_streak)
     elif result == 'AI':
         st.session_state.ai_streak += 1
         st.session_state.player_streak = 0
-        st.session_state.max_ai_streak = max(
-            st.session_state.max_ai_streak,
-            st.session_state.ai_streak
-        )
+        st.session_state.max_ai_streak = max(st.session_state.max_ai_streak, st.session_state.ai_streak)
     else:
         st.session_state.player_streak = 0
         st.session_state.ai_streak = 0
@@ -181,7 +167,11 @@ def play_round(player_move):
 # --- UI Starts Here ---
 st.set_page_config(page_title="RPS Challenge", layout="centered")
 st.title("🎮 Rock-Paper-Scissors Challenge")
-st.caption("60 rounds against an adaptive AI that learns your patterns. Can you outsmart it?")
+st.caption("60 rounds or 60 seconds against an adaptive AI. Can you win?")
+
+# ✅ Define move stats safely
+all_player_moves = [x['Player'] for x in st.session_state.history] if st.session_state.history else []
+all_ai_moves = [x['AI'] for x in st.session_state.history] if st.session_state.history else []
 
 # Display timer
 st.markdown(f"### ⏱️ Time Remaining: **{remaining_time} seconds**")
@@ -189,13 +179,12 @@ st.markdown(f"### ⏱️ Time Remaining: **{remaining_time} seconds**")
 # Reset Button
 st.button("♻️ Reset Game", on_click=reset_game, key='reset_top')
 
-
 # Progress bar
-progress_value = min(st.session_state.round / 60, 1.0)
-st.progress(progress_value, 
+st.progress(min(st.session_state.round / 60, 1.0), 
            text=f"Round {min(st.session_state.round, 60)}/60 - "
                 f"Streak: You: {st.session_state.player_streak} | AI: {st.session_state.ai_streak}")
 
+# Game buttons
 st.write("### Make your move:")
 cols = st.columns(3)
 with cols[0]:
@@ -208,20 +197,17 @@ with cols[2]:
     if st.button("✌️ Scissors", key='S', disabled=is_game_over(), use_container_width=True):
         play_round('S')
 
+# Stats
 col1, col2, col3 = st.columns(3)
-col1.metric("🤖 Computer Wins", st.session_state.stats['AI'], 
-            f"Max streak: {st.session_state.max_ai_streak}")
-col2.metric("👤 Your Wins", st.session_state.stats['Player'], 
-            f"Max streak: {st.session_state.max_player_streak}")
+col1.metric("🤖 AI Wins", st.session_state.stats['AI'], f"Streak: {st.session_state.max_ai_streak}")
+col2.metric("👤 Your Wins", st.session_state.stats['Player'], f"Streak: {st.session_state.max_player_streak}")
 col3.metric("🤝 Draws", st.session_state.stats['Draw'])
 
+# Last round
 if st.session_state.last_result and not is_game_over():
     st.subheader(f"✅ Round {st.session_state.round - 1} Result")
-    res_col1, res_col2 = st.columns(2)
-    with res_col1:
-        st.metric("You played", label_full[st.session_state.last_player_move])
-    with res_col2:
-        st.metric("AI played", label_full[st.session_state.last_ai_move])
+    st.metric("You played", label_full[st.session_state.last_player_move])
+    st.metric("AI played", label_full[st.session_state.last_ai_move])
     if st.session_state.last_result == 'Draw':
         st.success("It's a draw!")
     elif st.session_state.last_result == 'Player':
@@ -229,15 +215,15 @@ if st.session_state.last_result and not is_game_over():
     else:
         st.error("AI won this round!")
 
+# Move Stats
 if st.session_state.history:
     st.write("## Move Statistics")
-    all_player_moves = [x['Player'] for x in st.session_state.history]
-    player_move_counts = Counter(all_player_moves)
-    st.write("### Your Move Choices:")
+    counts = Counter(all_player_moves)
     for move in ['R', 'P', 'S']:
-        count = player_move_counts.get(move, 0)
+        count = counts.get(move, 0)
         st.write(f"{label_full[move]}: {count} times ({count/len(all_player_moves)*100:.1f}%)")
 
+# Game Over Summary
 if is_game_over():
     st.session_state.game_over = True
     st.balloons()
@@ -247,20 +233,17 @@ if is_game_over():
     ai_wins = st.session_state.stats['AI']
 
     if player_wins > ai_wins:
-        st.balloons()
-        st.success(f"## 🎉 You won {player_wins}-{ai_wins}!")
+        st.success(f"## 🎉 You won {player_wins} – {ai_wins}!")
     elif ai_wins > player_wins:
-        st.error(f"## 😢 AI won {ai_wins}-{player_wins}")
+        st.error(f"## 😢 AI won {ai_wins} – {player_wins}")
     else:
-        st.info(f"## 🤝 It's a tie! {player_wins}-{ai_wins}")
+        st.info(f"## 🤝 It's a tie! {player_wins} – {ai_wins}")
 
     st.write("### 📊 Advanced Statistics")
-
-    most_common = Counter(all_player_moves).most_common(1)
-    most_common = most_common[0][0] if most_common else "-"
-
-    most_common_ai = Counter(all_ai_moves).most_common(1)
-    most_common_ai = most_common_ai[0][0] if most_common_ai else "-"
+    mc = Counter(all_player_moves).most_common(1)
+    most_common = mc[0][0] if mc else "-"
+    mc_ai = Counter(all_ai_moves).most_common(1)
+    most_common_ai = mc_ai[0][0] if mc_ai else "-"
 
     col1, col2 = st.columns(2)
     with col1:
@@ -280,12 +263,11 @@ if is_game_over():
         if player_wins > ai_wins:
             st.success("You outsmarted the AI! Try again to see if it can learn better.")
         else:
-            st.info("The AI adapted well to your play style. Try changing your patterns!")
+            st.info("The AI adapted well. Try new patterns next time!")
 
     st.button("🔄 Play Again", on_click=reset_game, key='reset_bottom', type="primary")
 
-# --- Auto-refresh to update the countdown every second ---
+# --- Auto-refresh every second ---
 if remaining_time > 0 and not st.session_state.game_over:
     time.sleep(1)
     st.rerun()
-    st.stop()   # Optional: prevent further rendering
