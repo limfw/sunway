@@ -254,12 +254,13 @@ if is_game_over():
         st.metric("AI's most frequent move", label_full[most_common_ai])
 
     with st.expander("🤖 AI Performance Analysis"):
-        st.write("""
-        **Adaptive AI Insights:**
-        - The AI started randomly but gradually learned your patterns
-        - It adjusted its strategy based on your move sequences
-        - The learning rate adapted based on who was winning
-        """)
+        st.markdown("""
+    **Adaptive AI Insights:**
+    - The AI started randomly but gradually learned your patterns
+    - It adjusted its strategy based on your move sequences
+    - The learning rate adapted based on who was winning
+    """)
+
         if player_wins > ai_wins:
             st.success("You outsmarted the AI! Try again to see if it can learn better.")
         else:
