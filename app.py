@@ -1,5 +1,6 @@
 import streamlit as st
 import random
+import time 
 from collections import defaultdict, Counter
 
 # --- Label Map ---
