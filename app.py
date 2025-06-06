@@ -1,5 +1,6 @@
 import streamlit as st
 import random
+import time
 from collections import defaultdict, Counter
 
 # --- Label Map ---
@@ -19,6 +20,13 @@ if "round" not in st.session_state:
     st.session_state.ai_streak = 0
     st.session_state.max_player_streak = 0
     st.session_state.max_ai_streak = 0
+    st.session_state.timer_start = time.time()  # Start timer
+
+# --- Countdown Logic ---
+remaining_time = 60 - int(time.time() - st.session_state.timer_start)
+if remaining_time <= 0:
+    remaining_time = 0
+    st.session_state.game_over = True
 
 # --- Enhanced AI Class ---
 class RPS_AI:
@@ -113,9 +121,10 @@ def determine_winner(ai_move, player_move):
 def reset_game():
     for key in list(st.session_state.keys()):
         del st.session_state[key]
+    st.session_state.timer_start = time.time()
 
 def is_game_over():
-    return sum(st.session_state.stats.values()) >= 60
+    return st.session_state.game_over or sum(st.session_state.stats.values()) >= 60
 
 def update_streaks(result):
     if result == 'Player':
@@ -163,6 +172,9 @@ def play_round(player_move):
 st.set_page_config(page_title="RPS Challenge", layout="centered")
 st.title("🎮 Rock-Paper-Scissors Challenge")
 st.caption("60 rounds against an adaptive AI that learns your patterns. Can you outsmart it?")
+
+# Show countdown clock
+st.markdown(f"### ⏱️ Time Remaining: **{remaining_time} seconds**")
 
 st.button("♻️ Reset Game", on_click=reset_game, key='reset_top')
 
