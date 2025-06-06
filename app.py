@@ -223,3 +223,4 @@ if is_game_over():
 if remaining_time > 0 and not st.session_state.game_over:
     time.sleep(1)
     st.rerun()
+    st.stop()   # Optional: prevent further rendering
