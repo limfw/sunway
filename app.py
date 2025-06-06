@@ -241,8 +241,10 @@ if is_game_over():
     st.session_state.game_over = True
     st.balloons()
     st.success("### 🏁 Game Over!")
+
     player_wins = st.session_state.stats['Player']
     ai_wins = st.session_state.stats['AI']
+
     if player_wins > ai_wins:
         st.balloons()
         st.success(f"## 🎉 You won {player_wins}-{ai_wins}!")
@@ -250,17 +252,23 @@ if is_game_over():
         st.error(f"## 😢 AI won {ai_wins}-{player_wins}")
     else:
         st.info(f"## 🤝 It's a tie! {player_wins}-{ai_wins}")
+
     st.write("### 📊 Advanced Statistics")
+
+    most_common = Counter(all_player_moves).most_common(1)
+    most_common = most_common[0][0] if most_common else "-"
+
+    most_common_ai = Counter(all_ai_moves).most_common(1)
+    most_common_ai = most_common_ai[0][0] if most_common_ai else "-"
+
     col1, col2 = st.columns(2)
     with col1:
         st.metric("Your longest win streak", st.session_state.max_player_streak)
-        most_common = Counter(all_player_moves).most_common(1)[0][0] if all_player_moves else "-"
         st.metric("Your most frequent move", label_full[most_common])
     with col2:
         st.metric("AI's longest win streak", st.session_state.max_ai_streak)
-        all_ai_moves = [x['AI'] for x in st.session_state.history]
-        most_common_ai = Counter(all_ai_moves).most_common(1)[0][0] if all_ai_moves else "-"
         st.metric("AI's most frequent move", label_full[most_common_ai])
+
     with st.expander("🤖 AI Performance Analysis"):
         st.write("""
         **Adaptive AI Insights:**
@@ -268,10 +276,11 @@ if is_game_over():
         - It adjusted its strategy based on your move sequences
         - The learning rate adapted based on who was winning
         """)
-        if st.session_state.stats['Player'] > st.session_state.stats['AI']:
+        if player_wins > ai_wins:
             st.success("You outsmarted the AI! Try again to see if it can learn better.")
         else:
             st.info("The AI adapted well to your play style. Try changing your patterns!")
+
     st.button("🔄 Play Again", on_click=reset_game, key='reset_bottom', type="primary")
 
 # --- Auto-refresh to update the countdown every second ---
