@@ -10,7 +10,7 @@ import pandas as pd
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 creds = ServiceAccountCredentials.from_json_keyfile_name("gspread_creds.json", scope)
 client = gspread.authorize(creds)
-sheet = client.open("RPS_game_result").worksheet("Sheet1")
+sheet = client.open("RPS_Game_Result").worksheet("Sheet1")
 
 # --- Label Map ---
 label_full = {'R': '✊ Rock', 'P': '✋ Paper', 'S': '✌️ Scissors'}
@@ -189,7 +189,19 @@ if not st.session_state.team_name or not st.session_state.team_code:
         if not submitted:
             st.stop()
 
-# Game UI continues from here...
+# Game logic triggers on button clicks
+if not is_game_over():
+    st.write(f"⏳ Time Remaining: {remaining_time} seconds")
+    st.write(f"Round {st.session_state.round} of 60")
+    col1, col2, col3 = st.columns(3)
+    if col1.button("✊ Rock"):
+        play_round('R')
+    if col2.button("✋ Paper"):
+        play_round('P')
+    if col3.button("✌️ Scissors"):
+        play_round('S')
+
+    st.write(f"Last result: **{st.session_state.last_result}**" if st.session_state.last_result else "No move yet")
 
 # --- Auto-log result if game is over and not logged ---
 if is_game_over() and not st.session_state.result_logged:
