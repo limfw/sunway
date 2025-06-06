@@ -9,7 +9,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 creds = ServiceAccountCredentials.from_json_keyfile_name("gspread_creds.json", scope)
 client = gspread.authorize(creds)
-sheet = client.open("RPS_Game_Result").worksheet("Sheet1")
+sheet = client.open("RPS_Game_Results").worksheet("Sheet1")
 
 # --- Label Map ---
 label_full = {'R': '✊ Rock', 'P': '✋ Paper', 'S': '✌️ Scissors'}
