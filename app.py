@@ -222,4 +222,4 @@ if is_game_over():
 # --- Auto-refresh to update the countdown every second ---
 if remaining_time > 0 and not st.session_state.game_over:
     time.sleep(1)
-    st.experimental_rerun()
+    st.rerun()
