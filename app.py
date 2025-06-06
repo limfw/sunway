@@ -208,6 +208,10 @@ if is_game_over() and not st.session_state.result_logged:
     player_wins = st.session_state.stats['Player']
     ai_wins = st.session_state.stats['AI']
     win_flag = 1 if player_wins > ai_wins else 0
-    sheet.append_row([st.session_state.team_name, st.session_state.team_code, win_flag])
-    st.success("✅ Result saved to Google Sheet!")
-    st.session_state.result_logged = True
+
+    try:
+        sheet.append_row([st.session_state.team_name, st.session_state.team_code, win_flag])
+        st.success("✅ Result saved to Google Sheet!")
+        st.session_state.result_logged = True
+    except Exception as e:
+        st.error(f"❌ Failed to save result: {e}")
