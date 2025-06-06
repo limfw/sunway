@@ -11,6 +11,7 @@ scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/au
 creds = ServiceAccountCredentials.from_json_keyfile_name("gspread_creds.json", scope)
 client = gspread.authorize(creds)
 sheet = client.open("RPS_Game_Result").worksheet("Sheet1")
+existing_data = sheet.get_all_records()
 
 # --- Label Map ---
 label_full = {'R': '✊ Rock', 'P': '✋ Paper', 'S': '✌️ Scissors'}
@@ -183,10 +184,17 @@ st.title("🎮 Rock-Paper-Scissors Challenge")
 # Team name + code
 if not st.session_state.team_name or not st.session_state.team_code:
     with st.form("team_form"):
-        st.session_state.team_name = st.text_input("Enter Team Name")
-        st.session_state.team_code = st.text_input("Enter Team Code")
+        team_name = st.text_input("Enter Team Name")
+        team_code = st.text_input("Enter Team Code")
         submitted = st.form_submit_button("Start Game")
-        if not submitted:
+        if submitted:
+            match = [row for row in existing_data if row['Team'] == team_name and row['Code'] == team_code]
+            if match:
+                st.session_state.team_name = team_name
+                st.session_state.team_code = team_code
+            else:
+                st.warning("Team not found. Please enter valid credentials.")
+        else:
             st.stop()
 
 # Game logic triggers on button clicks
@@ -200,18 +208,28 @@ if not is_game_over():
         play_round('P')
     if col3.button("✌️ Scissors"):
         play_round('S')
-
     st.write(f"Last result: **{st.session_state.last_result}**" if st.session_state.last_result else "No move yet")
 
-# --- Auto-log result if game is over and not logged ---
+# --- Auto-log result ---
 if is_game_over() and not st.session_state.result_logged:
     player_wins = st.session_state.stats['Player']
     ai_wins = st.session_state.stats['AI']
     win_flag = 1 if player_wins > ai_wins else 0
+    sheet.append_row([st.session_state.team_name, st.session_state.team_code, win_flag])
+    st.success("✅ Result saved to Google Sheet!")
+    st.session_state.result_logged = True
 
-    try:
-        sheet.append_row([st.session_state.team_name, st.session_state.team_code, win_flag])
-        st.success("✅ Result saved to Google Sheet!")
-        st.session_state.result_logged = True
-    except Exception as e:
-        st.error(f"❌ Failed to save result: {e}")
+    with st.expander("🤖 AI Performance Analysis"):
+        st.markdown("""
+        **Adaptive AI Insights:**
+        - The AI started randomly but gradually learned your patterns
+        - It adjusted its strategy based on your move sequences
+        - The learning rate adapted based on who was winning
+        """)
+
+        if player_wins > ai_wins:
+            st.success("You outsmarted the AI! Try again to see if it can learn better.")
+        else:
+            st.info("The AI adapted well. Try new patterns next time!")
+
+    st.button("🔄 Play Again", on_click=reset_game, key='reset_bottom', type="primary")
