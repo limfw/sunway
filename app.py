@@ -16,7 +16,7 @@ client = gspread.authorize(creds)
 
 # 🔑 Replace this with your actual Google Sheet ID
 # You can find it from the sheet URL: https://docs.google.com/spreadsheets/d/**SHEET_ID**/edit
-spreadsheet_id = "https://docs.google.com/spreadsheets/d/1ONYiSZfhSUhIHU51kTAtuHXDLILLaUnpYlogObG5dA8/edit?gid=0#gid=0"
+spreadsheet_id = "1ONYiSZfhSUhIHU51kTAtuHXDLILLaUnpYlogObG5dA8"
 sheet = client.open_by_key(spreadsheet_id).worksheet("Sheet1")
 
 # --- Label Map ---
