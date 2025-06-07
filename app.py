@@ -6,11 +6,18 @@ from collections import defaultdict
 from oauth2client.service_account import ServiceAccountCredentials
 
 # --- Google Sheets Setup using Streamlit Secrets ---
-scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+scope = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
 creds_dict = st.secrets["gspread"]
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 client = gspread.authorize(creds)
-sheet = client.open("RPS_Game_Results").worksheet("Sheet1")
+
+# 🔑 Replace this with your actual Google Sheet ID
+# You can find it from the sheet URL: https://docs.google.com/spreadsheets/d/**SHEET_ID**/edit
+spreadsheet_id = "https://docs.google.com/spreadsheets/d/1ONYiSZfhSUhIHU51kTAtuHXDLILLaUnpYlogObG5dA8/edit?gid=0#gid=0"
+sheet = client.open_by_key(spreadsheet_id).worksheet("Sheet1")
 
 # --- Label Map ---
 label_full = {'R': '✊ Rock', 'P': '✋ Paper', 'S': '✌️ Scissors'}
@@ -40,17 +47,14 @@ if remaining_time <= 0:
     remaining_time = 0
     st.session_state.game_over = True
 
-# --- Game Over Check ---
 def is_game_over():
     return st.session_state.game_over or sum(st.session_state.stats.values()) >= 60
 
-# --- Reset Game ---
 def reset_game():
     for key in list(st.session_state.keys()):
         del st.session_state[key]
     st.session_state.timer_start = time.time()
 
-# --- AI Logic ---
 class RPS_AI:
     def __init__(self):
         self.reset()
@@ -110,7 +114,6 @@ class RPS_AI:
         else:
             self.learning_rate = max(0.1, self.learning_rate - 0.01)
 
-# --- Determine Winner ---
 def determine_winner(ai_move, player_move):
     if ai_move == player_move:
         return 'Draw'
@@ -192,7 +195,6 @@ if is_game_over() and not st.session_state.result_logged:
     st.success("✅ Result saved to Google Sheet!")
     st.session_state.result_logged = True
 
-    # Show AI insights
     with st.expander("🤖 AI Performance Analysis"):
         st.markdown("""
         **Adaptive AI Insights:**
