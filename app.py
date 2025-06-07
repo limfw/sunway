@@ -13,11 +13,8 @@ scope = [
 creds_dict = st.secrets["gspread"]
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 client = gspread.authorize(creds)
+sheet = client.open_by_key("1ONYiSZfhSUhIHU51kTAtuHXDLILLaUnpYlogObG5dA8").worksheet("Sheet1")
 
-# 🔑 Replace this with your actual Google Sheet ID
-# You can find it from the sheet URL: https://docs.google.com/spreadsheets/d/**SHEET_ID**/edit
-spreadsheet_id = "1ONYiSZfhSUhIHU51kTAtuHXDLILLaUnpYlogObG5dA8"
-sheet = client.open_by_key(spreadsheet_id).worksheet("Sheet1")
 
 # --- Label Map ---
 label_full = {'R': '✊ Rock', 'P': '✋ Paper', 'S': '✌️ Scissors'}
