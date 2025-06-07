@@ -30,18 +30,7 @@ if "initialized" not in st.session_state:
     st.session_state.team_code = ""
     st.session_state.result_logged = False
     st.session_state.initialized = True
-    st.session_state.timer_start = None  # Will start on form submit
-
-
-remaining_time = 60 - int(time.time() - st.session_state.timer_start)
-if remaining_time <= 0:
-    remaining_time = 0
-    st.session_state.game_over = True
-
-def reset_game():
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
-    st.session_state.timer_start = time.time()
+    st.session_state.timer_start = None  # Start after form submit
 
 def is_game_over():
     return st.session_state.game_over or sum(st.session_state.stats.values()) >= 60
@@ -154,7 +143,6 @@ def play_round(player_move):
 st.set_page_config(page_title="RPS Challenge", layout="centered")
 st.title("🎮 Rock-Paper-Scissors Challenge")
 st.caption("60 rounds against an adaptive AI that learns your patterns. Can you outsmart it?")
-st.markdown(f"### ⏱️ Time Remaining: **{remaining_time} seconds**")
 
 # Team Info Form
 if not st.session_state.team_name or not st.session_state.team_code:
@@ -163,21 +151,20 @@ if not st.session_state.team_name or not st.session_state.team_code:
         st.session_state.team_code = st.text_input("Enter Team Code")
         submitted = st.form_submit_button("Start Game")
         if submitted:
-            st.session_state.timer_start = time.time()  # ⏱ Start timer here
+            st.session_state.timer_start = time.time()
         else:
             st.stop()
 
-# Timer starts only after form is submitted
-if st.session_state.timer_start:
+# Timer Calculation (after form submission only)
+if st.session_state.timer_start is not None:
     remaining_time = 60 - int(time.time() - st.session_state.timer_start)
     if remaining_time <= 0:
         remaining_time = 0
         st.session_state.game_over = True
 else:
-    remaining_time = 60  # Initial state before game starts
+    remaining_time = 60  # Before game starts
 
-
-#st.button("♻️ Reset Game", on_click=reset_game, key='reset_top')
+st.markdown(f"### ⏱️ Time Remaining: **{remaining_time} seconds**")
 st.progress(min(st.session_state.round / 60, 1.0), text=f"Round {min(st.session_state.round, 60)}/60 - Streak: You: {st.session_state.player_streak} | AI: {st.session_state.ai_streak}")
 st.write("### Make your move:")
 cols = st.columns(3)
@@ -216,14 +203,13 @@ if is_game_over():
         result_flag = 1 if player_wins > ai_wins else 0
         try:
             cell = sheet.find(st.session_state.team_code)
-            sheet.update_cell(cell.row, 3, result_flag)  # Column 3 = "Result"
+            sheet.update_cell(cell.row, 3, result_flag)
             st.success("✅ Result saved to your team's row in Google Sheet!")
         except:
             st.error("❌ Could not find team code in sheet. Please check spelling or setup.")
         st.session_state.result_logged = True
 
-
-# === Auto Refresh ===
+# Auto refresh
 if remaining_time > 0 and not st.session_state.game_over:
     time.sleep(1)
     st.rerun()
