@@ -10,7 +10,7 @@ scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/au
 creds_dict = st.secrets["gspread"]
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 client = gspread.authorize(creds)
-sheet = client.open("RPS_Game_Result").worksheet("RPS_Game_Results")
+sheet = client.open("RPS_Game_Results").worksheet("Sheet1")
 
 # --- Label Map ---
 label_full = {'R': '✊ Rock', 'P': '✋ Paper', 'S': '✌️ Scissors'}
