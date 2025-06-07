@@ -1,8 +1,8 @@
 import streamlit as st
 import random
 import time
-from collections import defaultdict, Counter
 import gspread
+from collections import defaultdict
 from oauth2client.service_account import ServiceAccountCredentials
 
 # --- Google Sheets Setup using Streamlit Secrets ---
@@ -34,7 +34,7 @@ if "round" not in st.session_state:
     st.session_state.team_name = ""
     st.session_state.team_code = ""
 
-# --- Countdown Clock ---
+# --- Countdown Timer ---
 remaining_time = 60 - int(time.time() - st.session_state.timer_start)
 if remaining_time <= 0:
     remaining_time = 0
@@ -50,7 +50,7 @@ def reset_game():
         del st.session_state[key]
     st.session_state.timer_start = time.time()
 
-# --- Enhanced AI Class ---
+# --- AI Logic ---
 class RPS_AI:
     def __init__(self):
         self.reset()
@@ -75,9 +75,8 @@ class RPS_AI:
             sequence = tuple(moves[-4:-1])
             if sequence in self.move_sequences:
                 return self.move_sequences[sequence]
-        if len(moves) >= 3:
-            if moves[-1] == moves[-2] == moves[-3]:
-                return moves[-1]
+        if len(moves) >= 3 and moves[-1] == moves[-2] == moves[-3]:
+            return moves[-1]
         if len(moves) >= 1:
             last = moves[-1]
             probs = self.transition_counts[last]
@@ -111,7 +110,7 @@ class RPS_AI:
         else:
             self.learning_rate = max(0.1, self.learning_rate - 0.01)
 
-# --- Game Logic ---
+# --- Determine Winner ---
 def determine_winner(ai_move, player_move):
     if ai_move == player_move:
         return 'Draw'
