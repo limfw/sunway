@@ -13,7 +13,7 @@ client = gspread.authorize(creds)
 sheet = client.open_by_key("1ONYiSZfhSUhIHU51kTAtuHXDLILLaUnpYlogObG5dA8").worksheet("Sheet1")
 
 # === Session Initialization ===
-if "round" not in st.session_state:
+if "initialized" not in st.session_state:
     st.session_state.round = 1
     st.session_state.ai = None
     st.session_state.stats = {'AI': 0, 'Player': 0, 'Draw': 0}
@@ -26,10 +26,12 @@ if "round" not in st.session_state:
     st.session_state.ai_streak = 0
     st.session_state.max_player_streak = 0
     st.session_state.max_ai_streak = 0
-    st.session_state.timer_start = time.time()
     st.session_state.team_name = ""
     st.session_state.team_code = ""
     st.session_state.result_logged = False
+    st.session_state.initialized = True
+    st.session_state.timer_start = None  # Will start on form submit
+
 
 remaining_time = 60 - int(time.time() - st.session_state.timer_start)
 if remaining_time <= 0:
@@ -160,10 +162,22 @@ if not st.session_state.team_name or not st.session_state.team_code:
         st.session_state.team_name = st.text_input("Enter Team Name")
         st.session_state.team_code = st.text_input("Enter Team Code")
         submitted = st.form_submit_button("Start Game")
-        if not submitted:
+        if submitted:
+            st.session_state.timer_start = time.time()  # ⏱ Start timer here
+        else:
             st.stop()
 
-st.button("♻️ Reset Game", on_click=reset_game, key='reset_top')
+# Timer starts only after form is submitted
+if st.session_state.timer_start:
+    remaining_time = 60 - int(time.time() - st.session_state.timer_start)
+    if remaining_time <= 0:
+        remaining_time = 0
+        st.session_state.game_over = True
+else:
+    remaining_time = 60  # Initial state before game starts
+
+
+#st.button("♻️ Reset Game", on_click=reset_game, key='reset_top')
 st.progress(min(st.session_state.round / 60, 1.0), text=f"Round {min(st.session_state.round, 60)}/60 - Streak: You: {st.session_state.player_streak} | AI: {st.session_state.ai_streak}")
 st.write("### Make your move:")
 cols = st.columns(3)
