@@ -338,10 +338,11 @@ if not st.session_state.result_logged:
         st.error("❌ Could not save Github.")
         st.write(str(e))
 
-if "timer_start" in st.session_state:
-    remaining_time = 60 - int(time.time() - st.session_state.timer_start)
+if st.session_state.get("timer_start") is not None:
+    remaining_time = max(0, 60 - int(time.time() - st.session_state["timer_start"]))
 else:
     remaining_time = 60
+
 
 if remaining_time > 0 and not st.session_state.game_over:
     time.sleep(1)
