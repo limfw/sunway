@@ -67,6 +67,12 @@ def build_team_leaderboard():
 st.set_page_config("🏆 Class Leaderboard", layout="centered")
 st.title("🎯 Class Leaderboard: Combined Scores from All 6 Games")
 
+# --- Manual Refresh Button ---
+if st.button("🔁 Refresh Leaderboard Now"):
+    st.cache_data.clear()
+    st.experimental_rerun()
+
+
 df = build_team_leaderboard()
 
 if df.empty:
