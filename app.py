@@ -171,7 +171,6 @@ def save_result_to_github():
         'result': 1 if st.session_state.stats['Player'] > st.session_state.stats['AI'] else 0
     }
 
-    # Prepare upload content
     json_content = json.dumps(result_data, indent=2)
     encoded = base64.b64encode(json_content.encode()).decode()
 
@@ -188,26 +187,13 @@ def save_result_to_github():
         "content": encoded
     }
 
-    # === DEBUG LOG ===
-    st.markdown("### 🛠 GitHub Upload Debug Info")
-    st.write("**Target URL:**", url)
-    st.write("**Filename:**", filename)
-    st.write("**Payload Preview:**", json_content[:100] + "...")
-    st.write("**Token Exists?**", "Yes" if st.secrets["github"]["token"] else "No")
-
     response = requests.put(url, headers=headers, json=payload)
-
-    st.write("**GitHub Status Code:**", response.status_code)
-    try:
-        st.write("**GitHub Response JSON:**", response.json())
-    except Exception as e:
-        st.error("⚠️ Could not parse GitHub response.")
-        st.write(str(e))
 
     if response.status_code == 201:
         return f"https://github.com/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/blob/main/{filename}"
     else:
         raise Exception(f"GitHub upload failed: {response.status_code}")
+
 
 
 def play_round(player_move):
