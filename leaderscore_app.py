@@ -1,70 +1,92 @@
 import streamlit as st
 import pandas as pd
 import requests
+from datetime import datetime
 
-# --- GitHub Configuration ---
+# --- GitHub Config ---
 GITHUB_USERNAME = "limfw"
 GITHUB_REPO = "sunway"
-SCORE_FILE = "manual_scores.csv"
+GITHUB_TOKEN = st.secrets['github']['token']
+GITHUB_FOLDER = "results"
 PARTICIPANT_FILE = "participant.csv"
+MANUAL_SCORE_FILE = "manual_scores.csv"
 
-# --- Data URLs ---
-SCORE_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{SCORE_FILE}"
-PARTICIPANT_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{PARTICIPANT_FILE}"
-
-# --- Load Data ---
+# --- Load RPS Results (Game 1) ---
 @st.cache_data(ttl=60)
-def load_data():
-    score_df = pd.read_csv(SCORE_URL)
-    part_df = pd.read_csv(PARTICIPANT_URL)
-    score_df["Class"] = score_df["Class"].astype(str).str.strip().str.upper()
-    part_df["Class"] = part_df["Class"].astype(str).str.strip().str.upper()
-    return score_df, part_df
+def load_rps_results():
+    url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{GITHUB_REPO}/contents/{GITHUB_FOLDER}"
+    headers = {"Authorization": f"Bearer {GITHUB_TOKEN}"}
+    resp = requests.get(url, headers=headers)
 
+    results = []
+    if resp.status_code == 200:
+        for file in resp.json():
+            if file["name"].endswith(".json"):
+                json_url = file["download_url"]
+                data = requests.get(json_url).json()
+                results.append(data)
+    return pd.DataFrame(results)
+
+# --- Load participant.csv ---
+@st.cache_data(ttl=60)
+def load_participant_info():
+    url = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{PARTICIPANT_FILE}"
+    return pd.read_csv(url)
+
+# --- Load manual_scores.csv ---
+@st.cache_data(ttl=60)
+def load_manual_scores():
+    url = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{MANUAL_SCORE_FILE}"
+    return pd.read_csv(url)
+
+# --- Build Team-Level Leaderboard (Grouped by Class) ---
 def build_team_leaderboard():
-    score_df, part_df = load_data()
+    rps_df = load_rps_results()
+    part_df = load_participant_info()
+    score_df = load_manual_scores()
 
-    # Ensure every class has a score row
-    all_classes = sorted(part_df["Class"].unique())
-    for cls in all_classes:
-        if cls not in score_df["Class"].values:
-            new_row = {"Class": cls}
-            for g in range(2, 7):
-                new_row[f"game{g}"] = 0
-            score_df = pd.concat([score_df, pd.DataFrame([new_row])], ignore_index=True)
+    # Normalize keys
+    rps_df["team_code"] = rps_df["team_code"].astype(str).str.strip().str.upper()
+    part_df["team_code"] = part_df["team_code"].astype(str).str.strip().str.upper()
+    part_df["Class"] = part_df["Class"].astype(str).str.strip().str.upper()
+    score_df["team_label"] = score_df["team_label"].astype(str).str.strip().str.upper()
+    score_df = score_df.rename(columns={"team_label": "Class"})
 
-    score_df = score_df.drop_duplicates("Class").reset_index(drop=True)
+    if rps_df.empty:
+        rps_df = pd.DataFrame(columns=['team_code', 'win', 'timestamp'])
 
-    # Compute total score
-    game_cols = [f"game{i}" for i in range(1, 7) if f"game{i}" in score_df.columns]
-    score_df["Total Score"] = score_df[game_cols].sum(axis=1)
+    # Merge RPS results with participant info
+    rps_df = pd.merge(rps_df, part_df, on="team_code", how="left")
 
-    # Sort and rank
-    leaderboard = score_df[["Class", "Total Score"]].copy()
-    leaderboard = leaderboard.sort_values(by="Total Score", ascending=False).reset_index(drop=True)
+    # Sum RPS wins by Class
+    team_rps = rps_df.groupby("Class")['win'].sum().reset_index(name="game1")
 
-    return leaderboard
+    # Include all teams even if no RPS played yet
+    all_teams = part_df[['Class']].drop_duplicates()
+    team_rps = pd.merge(all_teams, team_rps, on="Class", how="left").fillna({"game1": 0})
+
+    # Merge with manual scores
+    merged = pd.merge(score_df, team_rps, on="Class", how="left").fillna(0)
+
+    # Calculate total score
+    score_cols = ['game1', 'game2', 'game3', 'game4', 'game5', 'game6']
+    merged['total'] = merged[score_cols].sum(axis=1)
+
+    return merged.sort_values("total", ascending=False)
 
 # --- Streamlit UI ---
-st.set_page_config(page_title="Leaderboard", layout="centered")
-st.title("🏆 Class Leaderboard")
-st.caption("Real-time scoreboard combining all games.")
+st.set_page_config("🏆 Class Leaderboard", layout="centered")
+st.title("🎯 Class Leaderboard: Combined Scores from All 6 Games")
 
 df = build_team_leaderboard()
 
-# --- Display Top 3 Highlight ---
-top3 = df.head(3)
-rest = df.iloc[3:]
+if df.empty:
+    st.warning("No results available yet.")
+else:
+    st.dataframe(
+        df[['Class', 'game1', 'game2', 'game3', 'game4', 'game5', 'game6', 'total']],
+        use_container_width=True
+    )
 
-st.markdown("### 🥇 Top 3 Teams")
-for i, row in top3.iterrows():
-    if i == 0:
-        st.success(f"1st: **{row['Class']}** – {row['Total Score']} points")
-    elif i == 1:
-        st.info(f"2nd: **{row['Class']}** – {row['Total Score']} points")
-    elif i == 2:
-        st.warning(f"3rd: **{row['Class']}** – {row['Total Score']} points")
-
-# --- Show Rest of Leaderboard ---
-st.markdown("### 📊 Full Leaderboard")
-st.dataframe(rest.reset_index(drop=True), use_container_width=True)
+    csv = df.to_csv(index=False)
+    st.download_button("📥 Download Leaderboard as CSV", data=csv, file_name="leaderboard.csv", mime="text/csv")
