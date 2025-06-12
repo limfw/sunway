@@ -13,29 +13,39 @@ import uuid
 label_full = {'R': '✊ Rock', 'P': '✋ Paper', 'S': '✌️ Scissors'}
 
 # --- Session Initialization ---
-if "round" not in st.session_state:
-    st.session_state.round = 1
-    st.session_state.ai = None
-    st.session_state.stats = {'AI': 0, 'Player': 0, 'Draw': 0}
-    st.session_state.history = []
-    st.session_state.game_over = False
-    st.session_state.last_result = None
-    st.session_state.last_ai_move = None
-    st.session_state.last_player_move = None
-    st.session_state.player_streak = 0
-    st.session_state.ai_streak = 0
-    st.session_state.max_player_streak = 0
-    st.session_state.max_ai_streak = 0
-    st.session_state.team_name = ""
-    st.session_state.team_code = ""
-    st.session_state.result_logged = False
-    st.session_state.timer_start = time.time()
+def init_session_state():
+    if "round" not in st.session_state:
+        st.session_state.round = 1
+        st.session_state.ai = None
+        st.session_state.stats = {'AI': 0, 'Player': 0, 'Draw': 0}
+        st.session_state.history = []
+        st.session_state.game_over = False
+        st.session_state.last_result = None
+        st.session_state.last_ai_move = None
+        st.session_state.last_player_move = None
+        st.session_state.player_streak = 0
+        st.session_state.ai_streak = 0
+        st.session_state.max_player_streak = 0
+        st.session_state.max_ai_streak = 0
+        st.session_state.team_name = ""
+        st.session_state.team_code = ""
+        st.session_state.result_logged = False
+        st.session_state.timer_start = None
+        st.session_state.game_started = False
+
+init_session_state()
 
 # --- Countdown Clock ---
-remaining_time = 60 - int(time.time() - st.session_state.timer_start)
-if remaining_time <= 0:
-    remaining_time = 0
-    st.session_state.game_over = True
+def get_remaining_time():
+    if st.session_state.timer_start is None:
+        return 60
+    elapsed = time.time() - st.session_state.timer_start
+    remaining = max(0, 60 - int(elapsed))
+    if remaining <= 0:
+        st.session_state.game_over = True
+    return remaining
+
+remaining_time = get_remaining_time()
 
 # --- AI Class ---
 class RPS_AI:
@@ -145,62 +155,77 @@ def update_streaks(result):
 
 # --- GitHub Save ---
 def save_result_to_github():
-    # Step 1: Prepare minimal result content
-    result_data = {
-        "team_code": st.session_state.team_code,
-        "timestamp": datetime.now().isoformat(),
-        "win": 1 if st.session_state.stats['Player'] > st.session_state.stats['AI'] else 0
-    }
+    try:
+        # Prepare minimal result content
+        result_data = {
+            "team_code": st.session_state.team_code,
+            "timestamp": datetime.now().isoformat(),
+            "win": 1 if st.session_state.stats['Player'] > st.session_state.stats['AI'] else 0
+        }
 
-    # Step 2: Encode content
-    json_content = json.dumps(result_data, indent=2)
-    encoded = base64.b64encode(json_content.encode()).decode()
+        # Encode content
+        json_content = json.dumps(result_data, indent=2)
+        encoded = base64.b64encode(json_content.encode()).decode()
 
-    # Step 3: Prepare unique filename with team_code + UUID
-    unique_id = uuid.uuid4().hex
-    filename = f"{st.session_state.team_code}_{unique_id}.json"
-    filepath = f"{st.secrets['github']['folder']}/{filename}"
-    url = f"https://api.github.com/repos/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/contents/{filepath}"
+        # Prepare unique filename with team_code + UUID
+        unique_id = uuid.uuid4().hex
+        filename = f"{st.session_state.team_code}_{unique_id}.json"
+        filepath = f"{st.secrets['github']['folder']}/{filename}"
+        url = f"https://api.github.com/repos/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/contents/{filepath}"
 
-    headers = {
-        "Authorization": f"Bearer {st.secrets['github']['token']}",
-        "Accept": "application/vnd.github+json"
-    }
+        headers = {
+            "Authorization": f"Bearer {st.secrets['github']['token']}",
+            "Accept": "application/vnd.github+json"
+        }
 
-    # Step 4: Create payload and PUT to GitHub
-    payload = {
-        "message": f"Save result for team {st.session_state.team_code}",
-        "content": encoded
-    }
+        # Create payload and PUT to GitHub
+        payload = {
+            "message": f"Save result for team {st.session_state.team_code}",
+            "content": encoded
+        }
 
-    put_resp = requests.put(url, headers=headers, json=payload)
+        put_resp = requests.put(url, headers=headers, json=payload)
 
-    if put_resp.status_code in [200, 201]:
-        return f"https://github.com/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/blob/main/{filepath}"
-    else:
-        raise Exception(f"GitHub upload failed: {put_resp.status_code} — {put_resp.text}")
-
+        if put_resp.status_code in [200, 201]:
+            return f"https://github.com/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/blob/main/{filepath}"
+        else:
+            raise Exception(f"GitHub upload failed: {put_resp.status_code} — {put_resp.text}")
+    except Exception as e:
+        st.error("Failed to save results to GitHub")
+        st.error(str(e))
+        return None
 
 def team_already_played(team_code):
-    url = f"https://api.github.com/repos/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/contents/{st.secrets['github']['folder']}"
-    headers = {
-        "Authorization": f"Bearer {st.secrets['github']['token']}",
-        "Accept": "application/vnd.github+json"
-    }
-    resp = requests.get(url, headers=headers)
-    if resp.status_code == 200:
-        files = resp.json()
-        for file in files:
-            if file["name"].startswith(f"{team_code}_") and file["name"].endswith(".json"):
-                return True
-    return False
-
+    try:
+        url = f"https://api.github.com/repos/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/contents/{st.secrets['github']['folder']}"
+        headers = {
+            "Authorization": f"Bearer {st.secrets['github']['token']}",
+            "Accept": "application/vnd.github+json"
+        }
+        resp = requests.get(url, headers=headers)
+        if resp.status_code == 200:
+            files = resp.json()
+            for file in files:
+                if file["name"].startswith(f"{team_code}_") and file["name"].endswith(".json"):
+                    return True
+        return False
+    except Exception as e:
+        st.error("Failed to check team status on GitHub")
+        st.error(str(e))
+        return False
 
 def play_round(player_move):
     if st.session_state.get("ai") is None:
         st.session_state.ai = RPS_AI()
+    
+    # Start timer on first move
+    if st.session_state.timer_start is None:
+        st.session_state.timer_start = time.time()
+        st.session_state.game_started = True
+    
     if is_game_over():
         return
+        
     ai_move = st.session_state.ai.get_move()
     result = determine_winner(ai_move, player_move)
     st.session_state.ai.update(player_move, result)
@@ -216,126 +241,121 @@ def play_round(player_move):
     st.session_state.last_ai_move = ai_move
     st.session_state.last_player_move = player_move
     st.session_state.round += 1
+    
     if is_game_over():
         st.session_state.game_over = True
+
+def reset_game():
+    st.session_state.clear()
+    init_session_state()
+    st.rerun()
 
 # --- UI ---
 st.set_page_config(page_title="RPS Challenge", layout="centered")
 st.title("🎮 Rock-Paper-Scissors Challenge")
 st.caption("60 rounds against an adaptive AI that learns your patterns. Can you outsmart it?")
 
-if "team_code" not in st.session_state or not st.session_state.team_code:
+# Team registration form
+if not st.session_state.game_started:
     with st.form("team_info"):
-        team_name = st.text_input("Enter Team Name")
-        team_code = st.text_input("Enter Team Code")
+        team_name = st.text_input("Enter Team Name", key="team_name_input")
+        team_code = st.text_input("Enter Team Code", key="team_code_input")
         submitted = st.form_submit_button("Start Game")
 
         if submitted:
-            if "team_code" in st.session_state and st.session_state.team_code:
-                st.warning("Game already in session. Please do not refresh.")
+            if not team_name or not team_code:
+                st.error("Please enter both team name and code")
                 st.stop()
-    
-            if team_already_played(team_code):
-                st.error("🚫 This team has already played.")
+            
+            try:
+                if team_already_played(team_code):
+                    st.error("🚫 This team has already played.")
+                    st.stop()
+            except:
+                st.error("Could not verify team status. Please try again.")
                 st.stop()
-            else:
-                st.session_state.team_name = team_name
-                st.session_state.team_code = team_code
-                #st.session_state.timer_start = time.time()
-                if "timer_start" not in st.session_state or st.session_state.timer_start is None:
-                    st.session_state.timer_start = time.time()
+            
+            st.session_state.team_name = team_name
+            st.session_state.team_code = team_code
+            st.rerun()
 
-                # Reset session
-                st.session_state.round = 1
-                st.session_state.stats = {'AI': 0, 'Player': 0, 'Draw': 0}
-                st.session_state.history = []
-                st.session_state.game_over = False
-                st.session_state.last_result = None
-                st.session_state.last_ai_move = None
-                st.session_state.last_player_move = None
-                st.session_state.player_streak = 0
-                st.session_state.ai_streak = 0
-                st.session_state.max_player_streak = 0
-                st.session_state.max_ai_streak = 0
-                st.session_state.result_logged = False
+# Main game UI
+if st.session_state.game_started or st.session_state.timer_start is not None:
+    st.markdown(f"### ⏱️ Time Remaining: **{remaining_time} seconds**")
 
-                # Generate new filename
-                unique_id = uuid.uuid4().hex
-                st.session_state.filename = f"{team_code}_{unique_id}.json"
+    progress_value = min(st.session_state.round / 60, 1.0)
+    st.progress(progress_value, text=f"Round {min(st.session_state.round, 60)}/60")
+
+    st.write("### Make your move:")
+    cols = st.columns(3)
+    with cols[0]:
+        if st.button("✊ Rock", key='R', disabled=is_game_over(), use_container_width=True):
+            play_round('R')
+            st.rerun()
+    with cols[1]:
+        if st.button("✋ Paper", key='P', disabled=is_game_over(), use_container_width=True):
+            play_round('P')
+            st.rerun()
+    with cols[2]:
+        if st.button("✌️ Scissors", key='S', disabled=is_game_over(), use_container_width=True):
+            play_round('S')
+            st.rerun()
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("🤖 Computer Wins", st.session_state.stats['AI'], f"Max streak: {st.session_state.max_ai_streak}")
+    col2.metric("👤 Your Wins", st.session_state.stats['Player'], f"Max streak: {st.session_state.max_player_streak}")
+    col3.metric("🤝 Draws", st.session_state.stats['Draw'])
+
+    if st.session_state.last_result and not is_game_over():
+        st.subheader(f"✅ Round {st.session_state.round - 1} Result")
+        res_col1, res_col2 = st.columns(2)
+        with res_col1:
+            st.metric("You played", label_full[st.session_state.last_player_move])
+        with res_col2:
+            st.metric("AI played", label_full[st.session_state.last_ai_move])
+        if st.session_state.last_result == 'Draw':
+            st.success("It's a draw!")
+        elif st.session_state.last_result == 'Player':
+            st.success("You won this round!")
         else:
-            st.stop()
+            st.error("AI won this round!")
 
+    if st.session_state.history:
+        st.write("## Move Statistics")
+        all_player_moves = [x['Player'] for x in st.session_state.history]
+        player_move_counts = Counter(all_player_moves)
+        for move in ['R', 'P', 'S']:
+            count = player_move_counts.get(move, 0)
+            st.write(f"{label_full[move]}: {count} times ({count / len(all_player_moves) * 100:.1f}%)")
 
-st.markdown(f"### ⏱️ Time Remaining: **{remaining_time} seconds**")
+    if is_game_over():
+        st.balloons()
+        st.success("### 🏁 Game Over!")
 
-progress_value = min(st.session_state.round / 60, 1.0)
-st.progress(progress_value, text=f"Round {min(st.session_state.round, 60)}/60")
+        player_wins = st.session_state.stats['Player']
+        ai_wins = st.session_state.stats['AI']
+        if player_wins > ai_wins:
+            st.success(f"## 🎉 You won {player_wins}-{ai_wins}!")
+        elif ai_wins > player_wins:
+            st.error(f"## 😢 AI won {ai_wins}-{player_wins}")
+        else:
+            st.info(f"## 🤝 It's a tie! {player_wins}-{ai_wins}")
 
-st.write("### Make your move:")
-cols = st.columns(3)
-with cols[0]:
-    if st.button("✊ Rock", key='R', disabled=is_game_over(), use_container_width=True):
-        play_round('R')
-with cols[1]:
-    if st.button("✋ Paper", key='P', disabled=is_game_over(), use_container_width=True):
-        play_round('P')
-with cols[2]:
-    if st.button("✌️ Scissors", key='S', disabled=is_game_over(), use_container_width=True):
-        play_round('S')
+        # Save results when game is over
+        if not st.session_state.result_logged:
+            try:
+                file_url = save_result_to_github()
+                if file_url:
+                    st.session_state.saved_file_url = file_url
+                    st.session_state.result_logged = True
+            except Exception as e:
+                st.error("❌ Could not save results to GitHub.")
+                st.error(str(e))
 
-col1, col2, col3 = st.columns(3)
-col1.metric("🤖 Computer Wins", st.session_state.stats['AI'], f"Max streak: {st.session_state.max_ai_streak}")
-col2.metric("👤 Your Wins", st.session_state.stats['Player'], f"Max streak: {st.session_state.max_player_streak}")
-col3.metric("🤝 Draws", st.session_state.stats['Draw'])
+        if st.button("🔄 Play Again", type="primary"):
+            reset_game()
 
-if st.session_state.last_result and not is_game_over():
-    st.subheader(f"✅ Round {st.session_state.round - 1} Result")
-    res_col1, res_col2 = st.columns(2)
-    with res_col1:
-        st.metric("You played", label_full[st.session_state.last_player_move])
-    with res_col2:
-        st.metric("AI played", label_full[st.session_state.last_ai_move])
-    if st.session_state.last_result == 'Draw':
-        st.success("It's a draw!")
-    elif st.session_state.last_result == 'Player':
-        st.success("You won this round!")
-    else:
-        st.error("AI won this round!")
-
-if st.session_state.history:
-    st.write("## Move Statistics")
-    all_player_moves = [x['Player'] for x in st.session_state.history]
-    player_move_counts = Counter(all_player_moves)
-    for move in ['R', 'P', 'S']:
-        count = player_move_counts.get(move, 0)
-        st.write(f"{label_full[move]}: {count} times ({count / len(all_player_moves) * 100:.1f}%)")
-
-if is_game_over():
-    st.balloons()
-    st.success("### 🏁 Game Over!")
-
-    player_wins = st.session_state.stats['Player']
-    ai_wins = st.session_state.stats['AI']
-    if player_wins > ai_wins:
-        st.success(f"## 🎉 You won {player_wins}-{ai_wins}!")
-    elif ai_wins > player_wins:
-        st.error(f"## 😢 AI won {ai_wins}-{player_wins}")
-    else:
-        st.info(f"## 🤝 It's a tie! {player_wins}-{ai_wins}")
-
-# Save results when game is over
-if not st.session_state.result_logged:
-    try:
-        file_url = save_result_to_github()
-        st.session_state.saved_file_url = file_url  # 👈 Store URL or flag
-        st.session_state.result_logged = True       # 👈 Mark as logged
-        # Optional: remove this line if you don't want to show anything
-        # st.success(f"✅ Result saved")
-    except Exception as e:
-        st.error("❌ Could not save Github.")
-        st.write(str(e))
-
-
-if remaining_time > 0 and not st.session_state.game_over:
+# Auto-refresh logic
+if remaining_time > 0 and not st.session_state.game_over and st.session_state.game_started:
     time.sleep(1)
     st.rerun()
