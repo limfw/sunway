@@ -332,7 +332,7 @@ if not st.session_state.result_logged:
         # Optional: remove this line if you don't want to show anything
         # st.success(f"✅ Result saved")
     except Exception as e:
-        st.error("❌ Could not save Github.")
+        st.error("❌ Could not save your result. Please contact the organizer.")
         st.write(str(e))
 
 
