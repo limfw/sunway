@@ -176,16 +176,17 @@ def save_result_to_github():
         "Accept": "application/vnd.github+json"
     }
 
-    # Prepare payload
     payload = {
         "message": f"Save result for {st.session_state.team_code}",
         "content": encoded
     }
 
-    # Check if file exists to add sha for update
+    # Always get latest SHA if file exists
     check = requests.get(url, headers=headers)
     if check.status_code == 200:
-        payload["sha"] = check.json().get("sha")
+        sha = check.json().get("sha")
+        if sha:
+            payload["sha"] = sha  # Ensure latest version is being updated
 
     # Upload or update
     response = requests.put(url, headers=headers, json=payload)
@@ -194,6 +195,7 @@ def save_result_to_github():
         return f"https://github.com/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/blob/main/{filename}"
     else:
         raise Exception(f"GitHub upload failed: {response.status_code} — {response.text}")
+
 
 
 def play_round(player_move):
