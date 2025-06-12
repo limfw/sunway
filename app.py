@@ -5,6 +5,9 @@ from collections import defaultdict, Counter
 import json
 from datetime import datetime
 import os
+import requests
+import base64
+
 
 # --- Label Map ---
 label_full = {'R': '✊ Rock', 'P': '✋ Paper', 'S': '✌️ Scissors'}
