@@ -283,7 +283,7 @@ if is_game_over():
     if not st.session_state.result_logged:
         try:
             file_url = save_result_to_github()
-            st.success(f"✅ Your result has been saved")
+            st.success("✅ Your result has been saved.")
         except Exception as e:
             st.error("❌ Could not save Github.")
             st.write(str(e))
