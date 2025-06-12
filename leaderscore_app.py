@@ -72,7 +72,6 @@ df = build_team_leaderboard()
 if df.empty:
     st.warning("No results available yet.")
 else:
-    # --- Top 3 Section ---
     st.markdown("## 🏅 Top 3 Teams")
 
     def format_class(c): return str(c).upper().strip()
@@ -88,14 +87,12 @@ else:
                 <div style='font-size: 20px; font-weight:bold;'>{top3.iloc[1]["Class"]}</div>
                 <div style='font-size: 18px;'>{int(top3.iloc[1]["total"])} pts</div>
             </div>
-
             <div style='flex:1.2; background:#FFD700; padding:20px; border-radius:20px; text-align:center; transform: scale(1.1); box-shadow:2px 2px 10px rgba(0,0,0,0.4);'>
                 <div style='font-size: 60px;'>🏆</div>
                 <div style='font-size: 24px; font-weight:bold;'>Champion</div>
                 <div style='font-size: 22px; font-weight:bold; margin-top:5px;'>{top3.iloc[0]["Class"]}</div>
                 <div style='font-size: 20px;'>{int(top3.iloc[0]["total"])} pts</div>
             </div>
-
             <div style='flex:1; background:#CD7F32; padding:15px; border-radius:20px; text-align:center; box-shadow:2px 2px 8px rgba(0,0,0,0.2);'>
                 <div style='font-size: 38px;'>🥉</div>
                 <div style='font-size: 20px; font-weight:bold;'>{top3.iloc[2]["Class"]}</div>
@@ -106,7 +103,6 @@ else:
         unsafe_allow_html=True
     )
 
-    # --- Full Leaderboard Table ---
     st.markdown("## 📋 Full Leaderboard")
     st.dataframe(
         df[['Class', 'game1', 'game2', 'game3', 'game4', 'game5', 'game6', 'total']],
