@@ -8,6 +8,7 @@ import os
 import requests
 import base64
 import uuid
+from streamlit_autorefresh import st_autorefresh
 
 # --- Label Map ---
 label_full = {'R': '✊ Rock', 'P': '✋ Paper', 'S': '✌️ Scissors'}
@@ -339,6 +340,4 @@ if not st.session_state.result_logged:
         st.error("❌ Could not save Github.")
         st.write(str(e))
 
-if remaining_time > 0 and not st.session_state.game_over:
-    time.sleep(1)
-    st.rerun()
+st_autorefresh(interval=1000, limit=60, key="game_refresh")
