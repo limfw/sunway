@@ -168,15 +168,28 @@ def save_result_to_file():
         'result': 1 if st.session_state.stats['Player'] > st.session_state.stats['AI'] else 0
     }
     
-    # Create directory if it doesn't exist
-    os.makedirs("results", exist_ok=True)
-    
-    # Save to a local file
-    filename = f"results/{st.session_state.team_code}_{int(time.time())}.json"
-    with open(filename, 'w') as f:
-        json.dump(result_data, f)
-    
-    return filename
+    json_content = json.dumps(result_data, indent=2)
+    encoded = base64.b64encode(json_content.encode()).decode()
+
+    filename = f"{st.secrets['github']['folder']}/{st.session_state.team_code}_{int(time.time())}.json"
+    url = f"https://api.github.com/repos/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/contents/{filename}"
+
+    headers = {
+        "Authorization": f"Bearer {st.secrets['github']['token']}",
+        "Accept": "application/vnd.github+json"
+    }
+
+    payload = {
+        "message": f"Add game result for {st.session_state.team_code}",
+        "content": encoded
+    }
+
+    response = requests.put(url, headers=headers, json=payload)
+
+    if response.status_code == 201:
+        return f"https://github.com/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/blob/main/{filename}"
+    else:
+        raise Exception(f"GitHub upload failed: {response.status_code} - {response.json()}")
 
 def play_round(player_move):
     if st.session_state.get("ai") is None:
@@ -320,10 +333,10 @@ if is_game_over():
     # Save results when game is over
     if not st.session_state.result_logged:
         try:
-            filename = save_result_to_file()
-            st.success(f"✅ Game result saved to {filename}. It will be submitted to Google Sheets later.")
+            file_url = save_result_to_github()
+            st.success(f"✅ Result saved to GitHub: [View file]({file_url})")
         except Exception as e:
-            st.error("❌ Could not save game result.")
+            st.error("❌ Could not save Github.")
             st.write(str(e))
         st.session_state.result_logged = True
 
