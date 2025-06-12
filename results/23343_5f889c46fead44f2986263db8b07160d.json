@@ -1,0 +1,499 @@
+{
+  "team_name": "A",
+  "team_code": "23343",
+  "timestamp": "2025-06-12T01:45:35.930735",
+  "stats": {
+    "AI": 27,
+    "Player": 18,
+    "Draw": 15
+  },
+  "history": [
+    {
+      "Round": 1,
+      "Player": "S",
+      "AI": "P",
+      "Result": "Player"
+    },
+    {
+      "Round": 2,
+      "Player": "P",
+      "AI": "R",
+      "Result": "Player"
+    },
+    {
+      "Round": 3,
+      "Player": "R",
+      "AI": "R",
+      "Result": "Draw"
+    },
+    {
+      "Round": 4,
+      "Player": "R",
+      "AI": "R",
+      "Result": "Draw"
+    },
+    {
+      "Round": 5,
+      "Player": "R",
+      "AI": "R",
+      "Result": "Draw"
+    },
+    {
+      "Round": 6,
+      "Player": "P",
+      "AI": "P",
+      "Result": "Draw"
+    },
+    {
+      "Round": 7,
+      "Player": "P",
+      "AI": "R",
+      "Result": "Player"
+    },
+    {
+      "Round": 8,
+      "Player": "S",
+      "AI": "S",
+      "Result": "Draw"
+    },
+    {
+      "Round": 9,
+      "Player": "S",
+      "AI": "R",
+      "Result": "AI"
+    },
+    {
+      "Round": 10,
+      "Player": "S",
+      "AI": "S",
+      "Result": "Draw"
+    },
+    {
+      "Round": 11,
+      "Player": "P",
+      "AI": "R",
+      "Result": "Player"
+    },
+    {
+      "Round": 12,
+      "Player": "P",
+      "AI": "R",
+      "Result": "Player"
+    },
+    {
+      "Round": 13,
+      "Player": "R",
+      "AI": "S",
+      "Result": "Player"
+    },
+    {
+      "Round": 14,
+      "Player": "P",
+      "AI": "R",
+      "Result": "Player"
+    },
+    {
+      "Round": 15,
+      "Player": "P",
+      "AI": "S",
+      "Result": "AI"
+    },
+    {
+      "Round": 16,
+      "Player": "R",
+      "AI": "P",
+      "Result": "AI"
+    },
+    {
+      "Round": 17,
+      "Player": "R",
+      "AI": "S",
+      "Result": "Player"
+    },
+    {
+      "Round": 18,
+      "Player": "P",
+      "AI": "R",
+      "Result": "Player"
+    },
+    {
+      "Round": 19,
+      "Player": "R",
+      "AI": "S",
+      "Result": "Player"
+    },
+    {
+      "Round": 20,
+      "Player": "R",
+      "AI": "P",
+      "Result": "AI"
+    },
+    {
+      "Round": 21,
+      "Player": "P",
+      "AI": "S",
+      "Result": "AI"
+    },
+    {
+      "Round": 22,
+      "Player": "P",
+      "AI": "R",
+      "Result": "Player"
+    },
+    {
+      "Round": 23,
+      "Player": "R",
+      "AI": "P",
+      "Result": "AI"
+    },
+    {
+      "Round": 24,
+      "Player": "R",
+      "AI": "P",
+      "Result": "AI"
+    },
+    {
+      "Round": 25,
+      "Player": "R",
+      "AI": "P",
+      "Result": "AI"
+    },
+    {
+      "Round": 26,
+      "Player": "R",
+      "AI": "P",
+      "Result": "AI"
+    },
+    {
+      "Round": 27,
+      "Player": "R",
+      "AI": "P",
+      "Result": "AI"
+    },
+    {
+      "Round": 28,
+      "Player": "R",
+      "AI": "P",
+      "Result": "AI"
+    },
+    {
+      "Round": 29,
+      "Player": "R",
+      "AI": "P",
+      "Result": "AI"
+    },
+    {
+      "Round": 30,
+      "Player": "R",
+      "AI": "P",
+      "Result": "AI"
+    },
+    {
+      "Round": 31,
+      "Player": "R",
+      "AI": "P",
+      "Result": "AI"
+    },
+    {
+      "Round": 32,
+      "Player": "R",
+      "AI": "P",
+      "Result": "AI"
+    },
+    {
+      "Round": 33,
+      "Player": "R",
+      "AI": "S",
+      "Result": "Player"
+    },
+    {
+      "Round": 34,
+      "Player": "R",
+      "AI": "P",
+      "Result": "AI"
+    },
+    {
+      "Round": 35,
+      "Player": "R",
+      "AI": "P",
+      "Result": "AI"
+    },
+    {
+      "Round": 36,
+      "Player": "R",
+      "AI": "P",
+      "Result": "AI"
+    },
+    {
+      "Round": 37,
+      "Player": "R",
+      "AI": "P",
+      "Result": "AI"
+    },
+    {
+      "Round": 38,
+      "Player": "S",
+      "AI": "S",
+      "Result": "Draw"
+    },
+    {
+      "Round": 39,
+      "Player": "P",
+      "AI": "S",
+      "Result": "AI"
+    },
+    {
+      "Round": 40,
+      "Player": "P",
+      "AI": "R",
+      "Result": "Player"
+    },
+    {
+      "Round": 41,
+      "Player": "R",
+      "AI": "R",
+      "Result": "Draw"
+    },
+    {
+      "Round": 42,
+      "Player": "P",
+      "AI": "P",
+      "Result": "Draw"
+    },
+    {
+      "Round": 43,
+      "Player": "P",
+      "AI": "R",
+      "Result": "Player"
+    },
+    {
+      "Round": 44,
+      "Player": "S",
+      "AI": "R",
+      "Result": "AI"
+    },
+    {
+      "Round": 45,
+      "Player": "P",
+      "AI": "R",
+      "Result": "Player"
+    },
+    {
+      "Round": 46,
+      "Player": "P",
+      "AI": "S",
+      "Result": "AI"
+    },
+    {
+      "Round": 47,
+      "Player": "R",
+      "AI": "P",
+      "Result": "AI"
+    },
+    {
+      "Round": 48,
+      "Player": "P",
+      "AI": "P",
+      "Result": "Draw"
+    },
+    {
+      "Round": 49,
+      "Player": "S",
+      "AI": "P",
+      "Result": "Player"
+    },
+    {
+      "Round": 50,
+      "Player": "P",
+      "AI": "P",
+      "Result": "Draw"
+    },
+    {
+      "Round": 51,
+      "Player": "P",
+      "AI": "P",
+      "Result": "Draw"
+    },
+    {
+      "Round": 52,
+      "Player": "R",
+      "AI": "S",
+      "Result": "Player"
+    },
+    {
+      "Round": 53,
+      "Player": "P",
+      "AI": "P",
+      "Result": "Draw"
+    },
+    {
+      "Round": 54,
+      "Player": "P",
+      "AI": "R",
+      "Result": "Player"
+    },
+    {
+      "Round": 55,
+      "Player": "S",
+      "AI": "S",
+      "Result": "Draw"
+    },
+    {
+      "Round": 56,
+      "Player": "S",
+      "AI": "R",
+      "Result": "AI"
+    },
+    {
+      "Round": 57,
+      "Player": "P",
+      "AI": "S",
+      "Result": "AI"
+    },
+    {
+      "Round": 58,
+      "Player": "R",
+      "AI": "P",
+      "Result": "AI"
+    },
+    {
+      "Round": 59,
+      "Player": "P",
+      "AI": "P",
+      "Result": "Draw"
+    },
+    {
+      "Round": 60,
+      "Player": "P",
+      "AI": "S",
+      "Result": "AI"
+    }
+  ],
+  "player_moves": [
+    "S",
+    "P",
+    "R",
+    "R",
+    "R",
+    "P",
+    "P",
+    "S",
+    "S",
+    "S",
+    "P",
+    "P",
+    "R",
+    "P",
+    "P",
+    "R",
+    "R",
+    "P",
+    "R",
+    "R",
+    "P",
+    "P",
+    "R",
+    "R",
+    "R",
+    "R",
+    "R",
+    "R",
+    "R",
+    "R",
+    "R",
+    "R",
+    "R",
+    "R",
+    "R",
+    "R",
+    "R",
+    "S",
+    "P",
+    "P",
+    "R",
+    "P",
+    "P",
+    "S",
+    "P",
+    "P",
+    "R",
+    "P",
+    "S",
+    "P",
+    "P",
+    "R",
+    "P",
+    "P",
+    "S",
+    "S",
+    "P",
+    "R",
+    "P",
+    "P"
+  ],
+  "ai_moves": [
+    "P",
+    "R",
+    "R",
+    "R",
+    "R",
+    "P",
+    "R",
+    "S",
+    "R",
+    "S",
+    "R",
+    "R",
+    "S",
+    "R",
+    "S",
+    "P",
+    "S",
+    "R",
+    "S",
+    "P",
+    "S",
+    "R",
+    "P",
+    "P",
+    "P",
+    "P",
+    "P",
+    "P",
+    "P",
+    "P",
+    "P",
+    "P",
+    "S",
+    "P",
+    "P",
+    "P",
+    "P",
+    "S",
+    "S",
+    "R",
+    "R",
+    "P",
+    "R",
+    "R",
+    "R",
+    "S",
+    "P",
+    "P",
+    "P",
+    "P",
+    "P",
+    "S",
+    "P",
+    "R",
+    "S",
+    "R",
+    "S",
+    "P",
+    "P",
+    "S"
+  ],
+  "max_player_streak": 4,
+  "max_ai_streak": 10,
+  "result": 0
+}
