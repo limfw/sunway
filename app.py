@@ -317,14 +317,18 @@ if is_game_over():
     else:
         st.info(f"## 🤝 It's a tie! {player_wins}-{ai_wins}")
 
-    if not st.session_state.result_logged:
-        try:
-            file_url = save_result_to_github()
-            st.success("✅ Your result has been saved.")
-        except Exception as e:
-            st.error("❌ Could not save your result.")
-            st.write(str(e))
-        st.session_state.result_logged = True
+# Save results when game is over
+if not st.session_state.result_logged:
+    try:
+        file_url = save_result_to_github()
+        st.session_state.saved_file_url = file_url  # 👈 Store URL or flag
+        st.session_state.result_logged = True       # 👈 Mark as logged
+        # Optional: remove this line if you don't want to show anything
+        # st.success(f"✅ Result saved")
+    except Exception as e:
+        st.error("❌ Could not save Github.")
+        st.write(str(e))
+
 
 if remaining_time > 0 and not st.session_state.game_over:
     time.sleep(1)
