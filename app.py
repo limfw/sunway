@@ -131,11 +131,6 @@ def determine_winner(ai_move, player_move):
         return 'AI'
     return 'Player'
 
-def reset_game():
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
-    st.session_state.timer_start = time.time()
-
 def is_game_over():
     return st.session_state.game_over or sum(st.session_state.stats.values()) >= 60
 
@@ -201,8 +196,6 @@ def save_result_to_github():
     else:
         raise Exception(f"GitHub upload failed: {put_resp.status_code} — {put_resp.text}")
 
-
-
 def play_round(player_move):
     if st.session_state.get("ai") is None:
         st.session_state.ai = RPS_AI()
@@ -245,8 +238,7 @@ if not st.session_state.team_name or not st.session_state.team_code:
 # Display timer
 st.markdown(f"### ⏱️ Time Remaining: **{remaining_time} seconds**")
 
-# Reset Button
-st.button("♻️ Reset Game", on_click=reset_game, key='reset_top')
+
 
 # Progress bar
 progress_value = min(st.session_state.round / 60, 1.0)
