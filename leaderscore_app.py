@@ -49,6 +49,7 @@ def build_team_leaderboard():
     part_df["Class"] = part_df["Class"].astype(str).str.strip().str.upper()
     score_df["Class"] = score_df["Class"].astype(str).str.strip().str.upper()
 
+    # Merge RPS game
     if rps_df.empty:
         rps_df = pd.DataFrame(columns=['team_code', 'win', 'timestamp'])
 
@@ -56,8 +57,16 @@ def build_team_leaderboard():
     team_rps = rps_df.groupby("Class")["win"].sum().reset_index(name="game1")
     all_classes = part_df[['Class']].drop_duplicates()
     team_rps = pd.merge(all_classes, team_rps, on="Class", how="left").fillna({"game1": 0})
-    merged = pd.merge(score_df, team_rps, on="Class", how="left").fillna(0)
-    score_cols = ['game1', 'game2', 'game3', 'game4', 'game5', 'game6']
+
+    # Ensure all 6 games are in the score_df
+    for g in range(2, 7):
+        col = f"game{g}"
+        if col not in score_df.columns:
+            score_df[col] = 0
+
+    # Merge all games and calculate total
+    merged = pd.merge(score_df, team_rps, on="Class", how="outer").fillna(0)
+    score_cols = [f'game{i}' for i in range(1, 7)]
     merged['total'] = merged[score_cols].sum(axis=1)
     merged = merged.sort_values("total", ascending=False).reset_index(drop=True)
     merged["Rank"] = merged.index + 1
