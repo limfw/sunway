@@ -145,33 +145,41 @@ def update_streaks(result):
 
 # --- GitHub Save ---
 def save_result_to_github():
+    # Step 1: Prepare minimal result content
     result_data = {
         "team_code": st.session_state.team_code,
         "timestamp": datetime.now().isoformat(),
         "win": 1 if st.session_state.stats['Player'] > st.session_state.stats['AI'] else 0
     }
+
+    # Step 2: Encode content
     json_content = json.dumps(result_data, indent=2)
     encoded = base64.b64encode(json_content.encode()).decode()
-    filename = f"{st.session_state.team_code}.json"
+
+    # Step 3: Prepare unique filename with team_code + UUID
+    unique_id = uuid.uuid4().hex
+    filename = f"{st.session_state.team_code}_{unique_id}.json"
     filepath = f"{st.secrets['github']['folder']}/{filename}"
     url = f"https://api.github.com/repos/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/contents/{filepath}"
+
     headers = {
         "Authorization": f"Bearer {st.secrets['github']['token']}",
         "Accept": "application/vnd.github+json"
     }
-    get_resp = requests.get(url, headers=headers)
-    sha = get_resp.json()["sha"] if get_resp.status_code == 200 else None
+
+    # Step 4: Create payload and PUT to GitHub
     payload = {
         "message": f"Save result for team {st.session_state.team_code}",
         "content": encoded
     }
-    if sha:
-        payload["sha"] = sha
+
     put_resp = requests.put(url, headers=headers, json=payload)
+
     if put_resp.status_code in [200, 201]:
         return f"https://github.com/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/blob/main/{filepath}"
     else:
         raise Exception(f"GitHub upload failed: {put_resp.status_code} — {put_resp.text}")
+
 
 def has_played(team_code):
     url = f"https://api.github.com/repos/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/contents/{st.secrets['github']['folder']}/{team_code}.json"
@@ -285,7 +293,7 @@ if is_game_over():
             file_url = save_result_to_github()
             st.success("✅ Your result has been saved.")
         except Exception as e:
-            st.error("❌ Could not save Github.")
+            st.error("❌ Could not save your result.")
             st.write(str(e))
         st.session_state.result_logged = True
 
