@@ -256,7 +256,7 @@ st.title("🎮 Rock-Paper-Scissors Challenge")
 st.caption("60 rounds against an adaptive AI that learns your patterns. Can you outsmart it?")
 
 # Team registration form
-if not st.session_state.game_started:
+if not st.session_state.get('team_code'):
     with st.form("team_info"):
         team_name = st.text_input("Enter Team Name", key="team_name_input")
         team_code = st.text_input("Enter Team Code", key="team_code_input")
@@ -277,6 +277,31 @@ if not st.session_state.game_started:
             
             st.session_state.team_name = team_name
             st.session_state.team_code = team_code
+            st.session_state.game_started = True
+            st.rerun()
+
+# Main game UI - show if we have a team code OR if game is in progress
+if st.session_state.get('team_code') or st.session_state.get('game_started'):
+    remaining_time = get_remaining_time()
+    
+    st.markdown(f"### ⏱️ Time Remaining: **{remaining_time} seconds**")
+
+    progress_value = min(st.session_state.round / 60, 1.0)
+    st.progress(progress_value, text=f"Round {min(st.session_state.round, 60)}/60")
+
+    st.write("### Make your move:")
+    cols = st.columns(3)
+    with cols[0]:
+        if st.button("✊ Rock", key='R', disabled=is_game_over(), use_container_width=True):
+            play_round('R')
+            st.rerun()
+    with cols[1]:
+        if st.button("✋ Paper", key='P', disabled=is_game_over(), use_container_width=True):
+            play_round('P')
+            st.rerun()
+    with cols[2]:
+        if st.button("✌️ Scissors", key='S', disabled=is_game_over(), use_container_width=True):
+            play_round('S')
             st.rerun()
 
 # Main game UI
