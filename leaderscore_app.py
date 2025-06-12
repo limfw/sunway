@@ -33,7 +33,7 @@ def load_participant_info():
     return pd.read_csv(url)
 
 # --- Load manual_scores.csv ---
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=30)
 def load_manual_scores():
     url = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{MANUAL_SCORE_FILE}"
     return pd.read_csv(url)
