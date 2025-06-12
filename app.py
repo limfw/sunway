@@ -11,6 +11,26 @@ import uuid
 # --- Label Map ---
 label_full = {'R': '✊ Rock', 'P': '✋ Paper', 'S': '✌️ Scissors'}
 
+# --- Load valid team codes from GitHub CSV ---
+@st.cache_data(ttl=60)
+def load_team_codes():
+    github_username = st.secrets['github']['username']
+    github_repo = st.secrets['github']['repo']
+    github_token = st.secrets['github']['token']
+    file_path = "team_code.csv"
+
+    url = f"https://raw.githubusercontent.com/{github_username}/{github_repo}/main/{file_path}"
+    headers = {"Authorization": f"Bearer {github_token}"}
+    response = requests.get(url, headers=headers)
+
+    if response.status_code == 200:
+        codes = response.text.strip().splitlines()
+        return [c.strip() for c in codes if c.strip()]
+    else:
+        st.error("🚫 Unable to load team codes from GitHub.")
+        return []
+
+
 # save the result to github
 def save_result_to_github():
     result_data = {
@@ -206,20 +226,42 @@ st.set_page_config(page_title="RPS Challenge", layout="centered")
 st.title("🎮 Rock-Paper-Scissors Challenge")
 st.caption("60 rounds against an adaptive AI that learns your patterns. Can you outsmart it?")
 
+
 # --- Team Info Form ---
+#if "team_code" not in st.session_state or not st.session_state.team_code:
+#    with st.form("team_info"):
+#        team_name = st.text_input("Enter Team Name")
+#        team_code = st.text_input("Enter Team Code")
+#        submitted = st.form_submit_button("Start Game")
+
+#        if submitted:
+#            st.session_state.team_name = team_name
+#            st.session_state.team_code = team_code
+#            st.session_state.timer_start = time.time()
+#            st.rerun()  # start fresh now that form is submitted
+#        else:
+#            st.stop()
+
+# --- Team Info Form with GitHub Validation ---
 if "team_code" not in st.session_state or not st.session_state.team_code:
+    allowed_codes = load_team_codes()
+
     with st.form("team_info"):
-        team_name = st.text_input("Enter Team Name")
         team_code = st.text_input("Enter Team Code")
         submitted = st.form_submit_button("Start Game")
 
         if submitted:
-            st.session_state.team_name = team_name
-            st.session_state.team_code = team_code
-            st.session_state.timer_start = time.time()
-            st.rerun()  # start fresh now that form is submitted
+            if team_code.strip() in allowed_codes:
+                st.session_state.team_code = team_code.strip()
+                st.session_state.timer_start = time.time()
+                st.success("✅ Valid team code. Starting the game...")
+                st.rerun()
+            else:
+                st.error("❌ Invalid team code. You are not authorized to play.")
+                st.stop()
         else:
             st.stop()
+
 
 # --- Timer Display ---
 if st.session_state.timer_start is not None:
