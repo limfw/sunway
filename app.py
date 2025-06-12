@@ -230,40 +230,38 @@ if "team_code" not in st.session_state or not st.session_state.team_code:
         team_code = st.text_input("Enter Team Code")
         submitted = st.form_submit_button("Start Game")
 
-        if submitted:
-            if "team_code" in st.session_state and st.session_state.team_code:
-                st.warning("Game already in session. Please do not refresh.")
-                st.stop()
-    
-            if team_already_played(team_code):
-                st.error("🚫 This team has already played.")
-                st.stop()
-            else:
-                st.session_state.team_name = team_name
-                st.session_state.team_code = team_code
-                #st.session_state.timer_start = time.time()
-                if "timer_start" not in st.session_state or st.session_state.timer_start is None:
-                    st.session_state.timer_start = time.time()
+if submitted:
+    if "team_code" in st.session_state and st.session_state.team_code:
+        st.warning("Game already in session. Please do not refresh.")
+        st.stop()
 
-                # Reset session
-                st.session_state.round = 1
-                st.session_state.stats = {'AI': 0, 'Player': 0, 'Draw': 0}
-                st.session_state.history = []
-                st.session_state.game_over = False
-                st.session_state.last_result = None
-                st.session_state.last_ai_move = None
-                st.session_state.last_player_move = None
-                st.session_state.player_streak = 0
-                st.session_state.ai_streak = 0
-                st.session_state.max_player_streak = 0
-                st.session_state.max_ai_streak = 0
-                st.session_state.result_logged = False
+    if team_already_played(team_code):
+        st.error("🚫 This team has already played.")
+        st.stop()
+    else:
+        st.session_state.team_name = team_name
+        st.session_state.team_code = team_code
 
-                # Generate new filename
-                unique_id = uuid.uuid4().hex
-                st.session_state.filename = f"{team_code}_{unique_id}.json"
-        else:
-            st.stop()
+        # ✅ Timer only starts now!
+        st.session_state.timer_start = time.time()
+
+        # Reset session
+        st.session_state.round = 1
+        st.session_state.stats = {'AI': 0, 'Player': 0, 'Draw': 0}
+        st.session_state.history = []
+        st.session_state.game_over = False
+        st.session_state.last_result = None
+        st.session_state.last_ai_move = None
+        st.session_state.last_player_move = None
+        st.session_state.player_streak = 0
+        st.session_state.ai_streak = 0
+        st.session_state.max_player_streak = 0
+        st.session_state.max_ai_streak = 0
+        st.session_state.result_logged = False
+
+        # Generate new filename
+        unique_id = uuid.uuid4().hex
+        st.session_state.filename = f"{team_code}_{unique_id}.json"
 
 
 st.markdown(f"### ⏱️ Time Remaining: **{remaining_time} seconds**")
