@@ -154,10 +154,10 @@ def update_streaks(result):
         st.session_state.player_streak = 0
         st.session_state.ai_streak = 0
 
-def save_result_to_file():
+def save_result_to_github():
     all_player_moves = [x['Player'] for x in st.session_state.history]
     all_ai_moves = [x['AI'] for x in st.session_state.history]
-    
+
     result_data = {
         'team_name': st.session_state.team_name,
         'team_code': st.session_state.team_code,
@@ -170,7 +170,8 @@ def save_result_to_file():
         'max_ai_streak': st.session_state.max_ai_streak,
         'result': 1 if st.session_state.stats['Player'] > st.session_state.stats['AI'] else 0
     }
-    
+
+    # Prepare upload content
     json_content = json.dumps(result_data, indent=2)
     encoded = base64.b64encode(json_content.encode()).decode()
 
@@ -187,12 +188,27 @@ def save_result_to_file():
         "content": encoded
     }
 
+    # === DEBUG LOG ===
+    st.markdown("### 🛠 GitHub Upload Debug Info")
+    st.write("**Target URL:**", url)
+    st.write("**Filename:**", filename)
+    st.write("**Payload Preview:**", json_content[:100] + "...")
+    st.write("**Token Exists?**", "Yes" if st.secrets["github"]["token"] else "No")
+
     response = requests.put(url, headers=headers, json=payload)
+
+    st.write("**GitHub Status Code:**", response.status_code)
+    try:
+        st.write("**GitHub Response JSON:**", response.json())
+    except Exception as e:
+        st.error("⚠️ Could not parse GitHub response.")
+        st.write(str(e))
 
     if response.status_code == 201:
         return f"https://github.com/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/blob/main/{filename}"
     else:
-        raise Exception(f"GitHub upload failed: {response.status_code} - {response.json()}")
+        raise Exception(f"GitHub upload failed: {response.status_code}")
+
 
 def play_round(player_move):
     if st.session_state.get("ai") is None:
