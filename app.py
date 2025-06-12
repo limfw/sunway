@@ -237,7 +237,9 @@ if not st.session_state.team_name or not st.session_state.team_code:
             else:
                 st.session_state.team_name = team_name
                 st.session_state.team_code = team_code
-                st.session_state.timer_start = time.time()
+                #st.session_state.timer_start = time.time()
+                if "timer_start" not in st.session_state or st.session_state.timer_start is None:
+                    st.session_state.timer_start = time.time()
 
                 # Reset session
                 st.session_state.round = 1
