@@ -154,6 +154,7 @@ def update_streaks(result):
         st.session_state.player_streak = 0
         st.session_state.ai_streak = 0
 
+# --- Save Result Function Updated ---
 def save_result_to_github():
     all_player_moves = [x['Player'] for x in st.session_state.history]
     all_ai_moves = [x['AI'] for x in st.session_state.history]
@@ -174,7 +175,7 @@ def save_result_to_github():
     json_content = json.dumps(result_data, indent=2)
     encoded = base64.b64encode(json_content.encode()).decode()
 
-    filename = f"{st.secrets['github']['folder']}/{st.session_state.team_code}_{int(time.time())}.json"
+    filename = f"{st.secrets['github']['folder']}/{st.session_state.filename}"
     url = f"https://api.github.com/repos/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/contents/{filename}"
 
     headers = {
@@ -192,7 +193,7 @@ def save_result_to_github():
     if response.status_code == 201:
         return f"https://github.com/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/blob/main/{filename}"
     else:
-        raise Exception(f"GitHub upload failed: {response.status_code}")
+        raise Exception(f"GitHub upload failed: {response.status_code} — {response.text}")
 
 
 
