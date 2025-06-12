@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import requests
-import altair as alt
 
 # --- GitHub Config ---
 GITHUB_USERNAME = "limfw"
@@ -39,7 +38,7 @@ def load_manual_scores():
     url = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{MANUAL_SCORE_FILE}"
     return pd.read_csv(url)
 
-# --- Build Team-Level Leaderboard ---
+# --- Build Leaderboard ---
 def build_team_leaderboard():
     rps_df = load_rps_results()
     part_df = load_participant_info()
@@ -66,7 +65,7 @@ def build_team_leaderboard():
     return merged.sort_values("total", ascending=False).reset_index(drop=True)
 
 # --- Streamlit UI ---
-st.set_page_config(page_title="🏆 Class Leaderboard", layout="wide")
+st.set_page_config(page_title="🏆 Class Leaderboard", layout="centered")
 st.title("🎯 Class Leaderboard: Combined Scores from All 6 Games")
 
 df = build_team_leaderboard()
@@ -74,27 +73,24 @@ df = build_team_leaderboard()
 if df.empty:
     st.warning("No results available yet.")
 else:
-    # --- Top 3 Cards ---
+    # --- Top 3 Section ---
+    st.markdown("## 🏅 Top 3 Teams")
+
     top3 = df.head(3).copy()
-    col1, col2, col3 = st.columns(3)
-    col1.metric("🥇 1st", top3.loc[0, "Class"], f"{int(top3.loc[0, 'total'])} pts")
-    col2.metric("🥈 2nd", top3.loc[1, "Class"], f"{int(top3.loc[1, 'total'])} pts")
-    col3.metric("🥉 3rd", top3.loc[2, "Class"], f"{int(top3.loc[2, 'total'])} pts")
+    st.markdown(
+        f"""
+        <div style='display: flex; justify-content: space-around; text-align: center; margin-top: 20px;'>
+            <div style='font-size: 40px;'>🥇<br><strong>{top3.iloc[0]['Class']}</strong><br><span style='font-size: 24px;'>{int(top3.iloc[0]['total'])} pts</span></div>
+            <div style='font-size: 36px;'>🥈<br><strong>{top3.iloc[1]['Class']}</strong><br><span style='font-size: 22px;'>{int(top3.iloc[1]['total'])} pts</span></div>
+            <div style='font-size: 34px;'>🥉<br><strong>{top3.iloc[2]['Class']}</strong><br><span style='font-size: 20px;'>{int(top3.iloc[2]['total'])} pts</span></div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     st.divider()
 
-    # --- Bar Chart ---
-    st.subheader("📊 Total Score by Class")
-    bar_chart = alt.Chart(df).mark_bar().encode(
-        x=alt.X("total:Q", title="Total Score"),
-        y=alt.Y("Class:N", sort='-x', title="Class"),
-        tooltip=["Class", "total"]
-    ).properties(height=400)
-    st.altair_chart(bar_chart, use_container_width=True)
-
-    st.divider()
-
-    # --- Full Leaderboard Table ---
+    # --- Full Table ---
     st.subheader("📋 Full Leaderboard Table")
     st.dataframe(
         df[['Class', 'game1', 'game2', 'game3', 'game4', 'game5', 'game6', 'total']],
