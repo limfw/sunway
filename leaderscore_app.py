@@ -48,14 +48,20 @@ def build_team_leaderboard():
     if rps_df.empty:
         rps_df = pd.DataFrame(columns=['team_code', 'win', 'timestamp'])
 
-    # Join RPS results with participant team labels
+    # 🔧 Fix merge key type mismatch
+    rps_df["team_code"] = rps_df["team_code"].astype(str).str.strip().str.upper()
+    part_df["team_code"] = part_df["team_code"].astype(str).str.strip().str.upper()
+
+    # Join RPS results with participant info
     rps_df = pd.merge(rps_df, part_df, on="team_code", how="left")
+
+    # Sum RPS wins per team_label
     team_rps = rps_df.groupby("team_label")['win'].sum().reset_index(name="game1")
 
-    # Merge with manual game scores (team-level)
+    # Merge with team-level manual scores
     merged = pd.merge(score_df, team_rps, on="team_label", how="left").fillna(0)
 
-    # Total score across all games
+    # Total score
     score_cols = ['game1', 'game2', 'game3', 'game4', 'game5', 'game6']
     merged['total'] = merged[score_cols].sum(axis=1)
 
