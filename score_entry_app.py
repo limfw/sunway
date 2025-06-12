@@ -2,67 +2,102 @@ import streamlit as st
 import pandas as pd
 import requests
 import base64
+from io import StringIO
 
 # --- GitHub Config ---
 GITHUB_USERNAME = "limfw"
 GITHUB_REPO = "sunway"
 GITHUB_TOKEN = st.secrets["github"]["token"]
-SCORE_FILE = "manual_scores.csv"
 PARTICIPANT_FILE = "participant.csv"
-RAW_SCORE_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{SCORE_FILE}"
-RAW_PARTICIPANT_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{PARTICIPANT_FILE}"
+SCORE_FILE = "manual_scores.csv"
 
-# --- Load CSVs ---
+RAW_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{SCORE_FILE}"
+API_URL = f"https://api.github.com/repos/{GITHUB_USERNAME}/{GITHUB_REPO}/contents/{SCORE_FILE}"
+
+# --- Load Participant Info ---
 @st.cache_data(ttl=60)
-def load_data():
-    score_df = pd.read_csv(RAW_SCORE_URL)
-    score_df["Class"] = score_df["Class"].astype(str).str.strip().str.upper()
+def load_class_list():
+    url = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{PARTICIPANT_FILE}"
+    df = pd.read_csv(url)
+    df["Class"] = df["Class"].astype(str).str.strip().str.upper()
+    return sorted(df["Class"].unique())
 
-    part_df = pd.read_csv(RAW_PARTICIPANT_URL)
-    part_df["Class"] = part_df["Class"].astype(str).str.strip().str.upper()
-    return score_df, part_df
+# --- Load Scores from GitHub ---
+@st.cache_data(ttl=60)
+def load_scores():
+    df = pd.read_csv(RAW_URL)
+    df["Class"] = df["Class"].astype(str).str.strip().str.upper()
+    return df
 
-# --- Build Leaderboard ---
-def build_team_leaderboard():
-    score_df, part_df = load_data()
+# --- GitHub Upload Function ---
+def upload_to_github(updated_df):
+    headers = {
+        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json"
+    }
 
-    # Ensure score_df has all game columns
-    for g in range(2, 7):
-        col = f"game{g}"
-        if col not in score_df.columns:
-            score_df[col] = 0
+    # Step 1: Get current SHA of file
+    get_resp = requests.get(API_URL, headers=headers)
+    if get_resp.status_code != 200:
+        st.error(f"❌ Failed to fetch file SHA: {get_resp.text}")
+        return False
 
-    score_df = score_df.groupby("Class")[
-        [f"game{i}" for i in range(2, 7)]
-    ].sum().reset_index()
+    sha = get_resp.json()["sha"]
 
-    score_df["Total"] = score_df[[f"game{i}" for i in range(2, 7)]].sum(axis=1)
-    return score_df.sort_values("Total", ascending=False).reset_index(drop=True)
+    # Step 2: Prepare content
+    csv_content = updated_df.to_csv(index=False)
+    encoded_content = base64.b64encode(csv_content.encode("utf-8")).decode("utf-8")
 
-# --- Streamlit App UI ---
-st.set_page_config(page_title="Class Leaderboard", layout="wide")
-st.title("🎯 Class Leaderboard: Combined Scores from All 6 Games")
+    data = {
+        "message": "✅ Update manual_scores.csv via score_entry_app",
+        "content": encoded_content,
+        "branch": "main",
+        "sha": sha
+    }
 
-# --- Main Leaderboard Display ---
-df = build_team_leaderboard()
+    # Step 3: PUT request to update file
+    put_resp = requests.put(API_URL, headers=headers, json=data)
+    if put_resp.status_code == 200:
+        return True
+    else:
+        st.error(f"❌ Upload failed: {put_resp.status_code} – {put_resp.text}")
+        return False
 
-if df.empty:
-    st.warning("No scores found yet.")
-else:
-    top3 = df.head(3).copy()
-    rest = df.iloc[3:].copy()
+# --- Streamlit UI ---
+st.set_page_config(page_title="Enter Game Scores", layout="centered")
+st.title("🎯 Game Score Entry Portal")
+st.info("Select a game and enter scores for each class.")
 
-    medal_icons = ["🥇", "🥈", "🥉"]
-    top3["Rank"] = [f"{medal} {cls}" for medal, cls in zip(medal_icons, top3["Class"])]
-    top3_display = top3[["Rank", "Total"] + [f"game{i}" for i in range(2, 7)]]
-    top3_display.index = [1, 2, 3]
+# --- Game Selector ---
+game_option = st.selectbox("Select game to enter score (Game 2 to Game 6):", [f"game{i}" for i in range(2, 7)])
 
-    st.subheader("🏆 Top 3 Teams")
-    st.dataframe(top3_display, use_container_width=True)
+# --- Load Data ---
+all_classes = load_class_list()
+scores_df = load_scores()
 
-    if not rest.empty:
-        st.subheader("📋 Other Teams")
-        rest = rest.reset_index(drop=True)
-        rest.index = rest.index + 4
-        rest_display = rest[["Class", "Total"] + [f"game{i}" for i in range(2, 7)]]
-        st.dataframe(rest_display, use_container_width=True)
+# --- Ensure all classes exist ---
+for c in all_classes:
+    if c not in scores_df["Class"].values:
+        new_row = {"Class": c}
+        for g in range(2, 7):
+            new_row[f"game{g}"] = 0
+        scores_df = pd.concat([scores_df, pd.DataFrame([new_row])], ignore_index=True)
+
+scores_df["Class"] = scores_df["Class"].astype(str).str.strip().str.upper()
+scores_df = scores_df.drop_duplicates("Class").reset_index(drop=True)
+
+# --- Score Entry UI ---
+st.markdown("### 📝 Enter scores")
+updated_scores = {}
+for c in all_classes:
+    score = st.number_input(f"{c} score:", min_value=0, max_value=100, step=1, key=c)
+    updated_scores[c] = score
+
+if st.button("✅ Submit Scores"):
+    for c in updated_scores:
+        scores_df.loc[scores_df["Class"] == c, game_option] = updated_scores[c]
+
+    if upload_to_github(scores_df):
+        st.success("✅ Scores updated successfully to GitHub!")
+    else:
+        st.error("❌ Failed to upload scores.")
