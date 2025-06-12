@@ -29,13 +29,20 @@ if "round" not in st.session_state:
     st.session_state.team_name = ""
     st.session_state.team_code = ""
     st.session_state.result_logged = False
-    st.session_state.timer_start = time.time()
+    #st.session_state.timer_start = time.time()    # ❌ REMOVE this
 
 # --- Countdown Clock ---
-remaining_time = 70 - int(time.time() - st.session_state.timer_start)
-if remaining_time <= 0:
-    remaining_time = 0
-    st.session_state.game_over = True
+#remaining_time = 70 - int(time.time() - st.session_state.timer_start)
+#if remaining_time <= 0:
+#    remaining_time = 0
+#    st.session_state.game_over = True
+if "timer_start" in st.session_state and st.session_state.timer_start is not None:
+    remaining_time = 60 - int(time.time() - st.session_state.timer_start)
+    if remaining_time <= 0:
+        remaining_time = 0
+        st.session_state.game_over = True
+else:
+    remaining_time = 60  # Default before game starts
 
 # --- AI Class ---
 class RPS_AI:
@@ -230,38 +237,38 @@ if "team_code" not in st.session_state or not st.session_state.team_code:
         team_code = st.text_input("Enter Team Code")
         submitted = st.form_submit_button("Start Game")
 
-        if submitted:
-            if "team_code" in st.session_state and st.session_state.team_code:
-                st.warning("Game already in session. Please do not refresh.")
-                st.stop()
+    if submitted:
+        if "team_code" in st.session_state and st.session_state.team_code:
+            st.warning("Game already in session. Please do not refresh.")
+            st.stop()
     
-            if team_already_played(team_code):
-                st.error("🚫 This team has already played.")
-                st.stop()
-            else:
-                st.session_state.team_name = team_name
-                st.session_state.team_code = team_code
-                #st.session_state.timer_start = time.time()
-                if "timer_start" not in st.session_state or st.session_state.timer_start is None:
-                    st.session_state.timer_start = time.time()
+        if team_already_played(team_code):
+            st.error("🚫 This team has already played.")
+            st.stop()
+        else:
+            # Reset session
+            st.session_state.team_name = team_name
+            st.session_state.team_code = team_code
+            st.session_state.round = 1
+            st.session_state.stats = {'AI': 0, 'Player': 0, 'Draw': 0}
+            st.session_state.history = []
+            st.session_state.game_over = False
+            st.session_state.last_result = None
+            st.session_state.last_ai_move = None
+            st.session_state.last_player_move = None
+            st.session_state.player_streak = 0
+            st.session_state.ai_streak = 0
+            st.session_state.max_player_streak = 0
+            st.session_state.max_ai_streak = 0
+            st.session_state.result_logged = False
+    
+            # ✅ Start timer here
+            st.session_state.timer_start = time.time()
+    
+            # Create result file
+            unique_id = uuid.uuid4().hex
+            st.session_state.filename = f"{team_code}_{unique_id}.json"
 
-                # Reset session
-                st.session_state.round = 1
-                st.session_state.stats = {'AI': 0, 'Player': 0, 'Draw': 0}
-                st.session_state.history = []
-                st.session_state.game_over = False
-                st.session_state.last_result = None
-                st.session_state.last_ai_move = None
-                st.session_state.last_player_move = None
-                st.session_state.player_streak = 0
-                st.session_state.ai_streak = 0
-                st.session_state.max_player_streak = 0
-                st.session_state.max_ai_streak = 0
-                st.session_state.result_logged = False
-
-                # Generate new filename
-                unique_id = uuid.uuid4().hex
-                st.session_state.filename = f"{team_code}_{unique_id}.json"
         else:
             st.stop()
 
