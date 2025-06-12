@@ -292,15 +292,24 @@ if st.session_state.get('team_code') or st.session_state.get('game_started'):
     st.write("### Make your move:")
     cols = st.columns(3)
     with cols[0]:
-        if st.button("✊ Rock", key='R', disabled=is_game_over(), use_container_width=True):
+        if st.button("✊ Rock", 
+                   key=f'rock_{st.session_state.round}',  # Unique key per round
+                   disabled=is_game_over(), 
+                   use_container_width=True):
             play_round('R')
             st.rerun()
     with cols[1]:
-        if st.button("✋ Paper", key='P', disabled=is_game_over(), use_container_width=True):
+        if st.button("✋ Paper", 
+                   key=f'paper_{st.session_state.round}',  # Unique key per round
+                   disabled=is_game_over(), 
+                   use_container_width=True):
             play_round('P')
             st.rerun()
     with cols[2]:
-        if st.button("✌️ Scissors", key='S', disabled=is_game_over(), use_container_width=True):
+        if st.button("✌️ Scissors", 
+                   key=f'scissors_{st.session_state.round}',  # Unique key per round
+                   disabled=is_game_over(), 
+                   use_container_width=True):
             play_round('S')
             st.rerun()
 
