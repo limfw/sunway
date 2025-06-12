@@ -8,7 +8,6 @@ import os
 import requests
 import base64
 import uuid
-from streamlit_autorefresh import st_autorefresh
 
 # --- Label Map ---
 label_full = {'R': '✊ Rock', 'P': '✋ Paper', 'S': '✌️ Scissors'}
@@ -30,14 +29,13 @@ if "round" not in st.session_state:
     st.session_state.team_name = ""
     st.session_state.team_code = ""
     st.session_state.result_logged = False
-    # st.session_state.timer_start = time.time()  ❌
+    st.session_state.timer_start = time.time()
 
 # --- Countdown Clock ---
-if st.session_state.get("timer_start") is not None:
-    remaining_time = max(0, 60 - int(time.time() - st.session_state["timer_start"]))
-else:
-    remaining_time = 60
-
+remaining_time = 70 - int(time.time() - st.session_state.timer_start)
+if remaining_time <= 0:
+    remaining_time = 0
+    st.session_state.game_over = True
 
 # --- AI Class ---
 class RPS_AI:
@@ -233,9 +231,6 @@ if "team_code" not in st.session_state or not st.session_state.team_code:
         submitted = st.form_submit_button("Start Game")
 
         if submitted:
-            if "timer_start" not in st.session_state or st.session_state.timer_start is None:
-                st.session_state.timer_start = time.time()
-        
             if "team_code" in st.session_state and st.session_state.team_code:
                 st.warning("Game already in session. Please do not refresh.")
                 st.stop()
@@ -340,4 +335,7 @@ if not st.session_state.result_logged:
         st.error("❌ Could not save Github.")
         st.write(str(e))
 
-st_autorefresh(interval=1000, limit=60, key="game_refresh")
+
+if remaining_time > 0 and not st.session_state.game_over:
+    time.sleep(1)
+    st.rerun()
