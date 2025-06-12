@@ -1,6 +1,6 @@
 Class,game2,game3,game4,game5,game6
-TEAM_A,1,0,0,0,0
-TEAM_B,2,0,0,0,0
-TEAM_C,3,0,8,0,0
-TEAM_D,4,0,8,0,0
-TEAM_E,4,0,8,0,0
+TEAM_A,1,5,0,0,0
+TEAM_B,2,4,0,0,0
+TEAM_C,3,5,8,0,0
+TEAM_D,4,5,8,0,0
+TEAM_E,4,5,8,0,0
