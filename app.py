@@ -160,20 +160,9 @@ def update_streaks(result):
 
 # --- Save Result Function Updated ---
 def save_result_to_github():
-    all_player_moves = [x['Player'] for x in st.session_state.history]
-    all_ai_moves = [x['AI'] for x in st.session_state.history]
-
     result_data = {
-        'team_name': st.session_state.team_name,
-        'team_code': st.session_state.team_code,
-        'timestamp': datetime.now().isoformat(),
-        'stats': st.session_state.stats,
-        'history': st.session_state.history,
-        'player_moves': all_player_moves,
-        'ai_moves': all_ai_moves,
-        'max_player_streak': st.session_state.max_player_streak,
-        'max_ai_streak': st.session_state.max_ai_streak,
-        'result': 1 if st.session_state.stats['Player'] > st.session_state.stats['AI'] else 0
+        "team_code": st.session_state.team_code,
+        "result": 1 if st.session_state.stats["Player"] > st.session_state.stats["AI"] else 0
     }
 
     json_content = json.dumps(result_data, indent=2)
@@ -187,18 +176,24 @@ def save_result_to_github():
         "Accept": "application/vnd.github+json"
     }
 
+    # Prepare payload
     payload = {
-        "message": f"Add game result for {st.session_state.team_code}",
+        "message": f"Save result for {st.session_state.team_code}",
         "content": encoded
     }
 
+    # Check if file exists to add sha for update
+    check = requests.get(url, headers=headers)
+    if check.status_code == 200:
+        payload["sha"] = check.json().get("sha")
+
+    # Upload or update
     response = requests.put(url, headers=headers, json=payload)
 
-    if response.status_code == 201:
+    if response.status_code in [200, 201]:
         return f"https://github.com/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/blob/main/{filename}"
     else:
         raise Exception(f"GitHub upload failed: {response.status_code} — {response.text}")
-
 
 
 def play_round(player_move):
