@@ -251,6 +251,7 @@ def reset_game():
     st.rerun()
 
 # --- UI ---
+# --- UI ---
 st.set_page_config(page_title="RPS Challenge", layout="centered")
 st.title("🎮 Rock-Paper-Scissors Challenge")
 st.caption("60 rounds against an adaptive AI that learns your patterns. Can you outsmart it?")
@@ -280,8 +281,8 @@ if not st.session_state.get('team_code'):
             st.session_state.game_started = True
             st.rerun()
 
-# Main game UI - show if we have a team code OR if game is in progress
-if st.session_state.get('team_code') or st.session_state.get('game_started'):
+# Only ONE game UI section
+if st.session_state.get('team_code'):
     remaining_time = get_remaining_time()
     
     st.markdown(f"### ⏱️ Time Remaining: **{remaining_time} seconds**")
@@ -293,45 +294,23 @@ if st.session_state.get('team_code') or st.session_state.get('game_started'):
     cols = st.columns(3)
     with cols[0]:
         if st.button("✊ Rock", 
-                   key=f'rock_{st.session_state.round}',  # Unique key per round
+                   key=f'rock_{st.session_state.round}',
                    disabled=is_game_over(), 
                    use_container_width=True):
             play_round('R')
             st.rerun()
     with cols[1]:
         if st.button("✋ Paper", 
-                   key=f'paper_{st.session_state.round}',  # Unique key per round
+                   key=f'paper_{st.session_state.round}',
                    disabled=is_game_over(), 
                    use_container_width=True):
             play_round('P')
             st.rerun()
     with cols[2]:
         if st.button("✌️ Scissors", 
-                   key=f'scissors_{st.session_state.round}',  # Unique key per round
+                   key=f'scissors_{st.session_state.round}',
                    disabled=is_game_over(), 
                    use_container_width=True):
-            play_round('S')
-            st.rerun()
-
-# Main game UI
-if st.session_state.game_started or st.session_state.timer_start is not None:
-    st.markdown(f"### ⏱️ Time Remaining: **{remaining_time} seconds**")
-
-    progress_value = min(st.session_state.round / 60, 1.0)
-    st.progress(progress_value, text=f"Round {min(st.session_state.round, 60)}/60")
-
-    st.write("### Make your move:")
-    cols = st.columns(3)
-    with cols[0]:
-        if st.button("✊ Rock", key='R', disabled=is_game_over(), use_container_width=True):
-            play_round('R')
-            st.rerun()
-    with cols[1]:
-        if st.button("✋ Paper", key='P', disabled=is_game_over(), use_container_width=True):
-            play_round('P')
-            st.rerun()
-    with cols[2]:
-        if st.button("✌️ Scissors", key='S', disabled=is_game_over(), use_container_width=True):
             play_round('S')
             st.rerun()
 
@@ -375,7 +354,6 @@ if st.session_state.game_started or st.session_state.timer_start is not None:
         else:
             st.info(f"## 🤝 It's a tie! {player_wins}-{ai_wins}")
 
-        # Save results when game is over
         if not st.session_state.result_logged:
             try:
                 file_url = save_result_to_github()
@@ -386,7 +364,7 @@ if st.session_state.game_started or st.session_state.timer_start is not None:
                 st.error("❌ Could not save results to GitHub.")
                 st.error(str(e))
 
-        if st.button("🔄 Play Again", type="primary"):
+        if st.button("🔄 Play Again", type="primary", key="play_again"):
             reset_game()
 
 # Auto-refresh logic
