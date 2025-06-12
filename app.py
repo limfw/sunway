@@ -181,14 +181,20 @@ def save_result_to_github():
         raise Exception(f"GitHub upload failed: {put_resp.status_code} — {put_resp.text}")
 
 
-def has_played(team_code):
-    url = f"https://api.github.com/repos/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/contents/{st.secrets['github']['folder']}/{team_code}.json"
+def team_already_played(team_code):
+    url = f"https://api.github.com/repos/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/contents/{st.secrets['github']['folder']}"
     headers = {
         "Authorization": f"Bearer {st.secrets['github']['token']}",
         "Accept": "application/vnd.github+json"
     }
-    response = requests.get(url, headers=headers)
-    return response.status_code == 200
+    resp = requests.get(url, headers=headers)
+    if resp.status_code == 200:
+        files = resp.json()
+        for file in files:
+            if file["name"].startswith(f"{team_code}_") and file["name"].endswith(".json"):
+                return True
+    return False
+
 
 def play_round(player_move):
     if st.session_state.get("ai") is None:
@@ -225,29 +231,34 @@ if not st.session_state.team_name or not st.session_state.team_code:
         submitted = st.form_submit_button("Start Game")
 
         if submitted:
-            st.session_state.team_name = team_name
-            st.session_state.team_code = team_code
-            st.session_state.timer_start = time.time()
+            if team_already_played(team_code):
+                st.error("🚫 This team has already played.")
+                st.stop()
+            else:
+                st.session_state.team_name = team_name
+                st.session_state.team_code = team_code
+                st.session_state.timer_start = time.time()
 
-            # 🔄 Reset all relevant session state
-            st.session_state.round = 1
-            st.session_state.stats = {'AI': 0, 'Player': 0, 'Draw': 0}
-            st.session_state.history = []
-            st.session_state.game_over = False
-            st.session_state.last_result = None
-            st.session_state.last_ai_move = None
-            st.session_state.last_player_move = None
-            st.session_state.player_streak = 0
-            st.session_state.ai_streak = 0
-            st.session_state.max_player_streak = 0
-            st.session_state.max_ai_streak = 0
-            st.session_state.result_logged = False
+                # Reset session
+                st.session_state.round = 1
+                st.session_state.stats = {'AI': 0, 'Player': 0, 'Draw': 0}
+                st.session_state.history = []
+                st.session_state.game_over = False
+                st.session_state.last_result = None
+                st.session_state.last_ai_move = None
+                st.session_state.last_player_move = None
+                st.session_state.player_streak = 0
+                st.session_state.ai_streak = 0
+                st.session_state.max_player_streak = 0
+                st.session_state.max_ai_streak = 0
+                st.session_state.result_logged = False
 
-            # ✅ Create new filename using team_code + UUID
-            unique_id = uuid.uuid4().hex
-            st.session_state.filename = f"{team_code}_{unique_id}.json"
+                # Generate new filename
+                unique_id = uuid.uuid4().hex
+                st.session_state.filename = f"{team_code}_{unique_id}.json"
         else:
             st.stop()
+
 
 st.markdown(f"### ⏱️ Time Remaining: **{remaining_time} seconds**")
 
