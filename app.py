@@ -344,8 +344,6 @@ if is_game_over():
             st.write(str(e))
         st.session_state.result_logged = True
 
-    st.button("🔄 Play Again", on_click=reset_game, key='reset_bottom', type="primary")
-
 # --- Auto-refresh to update the countdown every second ---
 if remaining_time > 0 and not st.session_state.game_over:
     time.sleep(1)
