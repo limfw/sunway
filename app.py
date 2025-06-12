@@ -224,13 +224,17 @@ st.set_page_config(page_title="RPS Challenge", layout="centered")
 st.title("🎮 Rock-Paper-Scissors Challenge")
 st.caption("60 rounds against an adaptive AI that learns your patterns. Can you outsmart it?")
 
-if not st.session_state.team_name or not st.session_state.team_code:
+if "team_code" not in st.session_state or not st.session_state.team_code:
     with st.form("team_info"):
         team_name = st.text_input("Enter Team Name")
         team_code = st.text_input("Enter Team Code")
         submitted = st.form_submit_button("Start Game")
 
         if submitted:
+            if "team_code" in st.session_state and st.session_state.team_code:
+                st.warning("Game already in session. Please do not refresh.")
+                st.stop()
+    
             if team_already_played(team_code):
                 st.error("🚫 This team has already played.")
                 st.stop()
