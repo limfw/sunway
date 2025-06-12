@@ -33,10 +33,28 @@ def load_participant_info():
     return pd.read_csv(url)
 
 # --- Load manual_scores.csv ---
+#@st.cache_data(ttl=30)
+#def load_manual_scores():
+#    url = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{MANUAL_SCORE_FILE}"
+#    return pd.read_csv(url)
+
+import base64
+import io
+
 @st.cache_data(ttl=30)
 def load_manual_scores():
-    url = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{MANUAL_SCORE_FILE}"
-    return pd.read_csv(url)
+    url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{GITHUB_REPO}/contents/{MANUAL_SCORE_FILE}"
+    headers = {"Authorization": f"Bearer {GITHUB_TOKEN}"}
+    response = requests.get(url, headers=headers)
+    
+    if response.status_code == 200:
+        content = response.json()["content"]
+        decoded = base64.b64decode(content)
+        return pd.read_csv(io.StringIO(decoded.decode()))
+    else:
+        st.error("❌ Failed to load manual_scores.csv from GitHub")
+        return pd.DataFrame()
+
 
 # --- Build Team-Level Leaderboard ---
 def build_team_leaderboard():
