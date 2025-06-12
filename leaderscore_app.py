@@ -49,8 +49,8 @@ def build_team_leaderboard():
     rps_df["team_code"] = rps_df["team_code"].astype(str).str.strip().str.upper()
     part_df["team_code"] = part_df["team_code"].astype(str).str.strip().str.upper()
     part_df["Class"] = part_df["Class"].astype(str).str.strip().str.upper()
-    score_df["team_label"] = score_df["team_label"].astype(str).str.strip().str.upper()
-    score_df = score_df.rename(columns={"team_label": "Class"})
+    score_df["Class"] = score_df["Class"].astype(str).str.strip().str.upper()
+    score_df = score_df.rename(columns={"Class": "Class"})
 
     if rps_df.empty:
         rps_df = pd.DataFrame(columns=['team_code', 'win', 'timestamp'])
