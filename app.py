@@ -32,10 +32,11 @@ if "round" not in st.session_state:
     # st.session_state.timer_start = time.time()  ❌
 
 # --- Countdown Clock ---
-remaining_time = 60 - int(time.time() - st.session_state.timer_start)
-if remaining_time <= 0:
-    remaining_time = 0
-    st.session_state.game_over = True
+if st.session_state.get("timer_start") is not None:
+    remaining_time = max(0, 60 - int(time.time() - st.session_state["timer_start"]))
+else:
+    remaining_time = 60
+
 
 # --- AI Class ---
 class RPS_AI:
@@ -337,12 +338,6 @@ if not st.session_state.result_logged:
     except Exception as e:
         st.error("❌ Could not save Github.")
         st.write(str(e))
-
-if st.session_state.get("timer_start") is not None:
-    remaining_time = max(0, 60 - int(time.time() - st.session_state["timer_start"]))
-else:
-    remaining_time = 60
-
 
 if remaining_time > 0 and not st.session_state.game_over:
     time.sleep(1)
