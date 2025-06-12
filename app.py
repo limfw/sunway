@@ -31,6 +31,10 @@ if "round" not in st.session_state:
     st.session_state.result_logged = False
     st.session_state.timer_start = time.time()  # Timer starts here
 
+# Generate a unique filename at game start
+if "filename" not in st.session_state and st.session_state.team_code:
+    st.session_state.filename = f"{st.session_state.team_code}_{uuid.uuid4().hex}.json"
+
 # --- Countdown Clock ---
 remaining_time = 60 - int(time.time() - st.session_state.timer_start)
 if remaining_time <= 0:
