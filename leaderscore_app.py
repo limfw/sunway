@@ -82,8 +82,8 @@ def build_team_leaderboard():
     return merged.sort_values("total", ascending=False).reset_index(drop=True)
 
 # --- Streamlit UI ---
-st.set_page_config("🏆 Class Leaderboard", layout="centered")
-st.title("🎯 Class Leaderboard: Combined Scores from All 6 Games")
+st.set_page_config("🏆 MATRIX Leaderboard", layout="centered")
+st.title("🏆Top Teams Across All 6 Games")
 
 # --- Manual Refresh Button ---
 if st.button("🔁 Refresh Leaderboard Now"):
@@ -127,7 +127,7 @@ else:
         unsafe_allow_html=True
     )
 
-    st.markdown("## 📋 Full Leaderboard")
+    st.markdown("## 📋 Full Results")
     st.dataframe(
         df[['Class', 'game1', 'game2', 'game3', 'game4', 'game5', 'game6', 'total']],
         use_container_width=True
