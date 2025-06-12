@@ -11,6 +11,27 @@ import uuid
 # --- Label Map ---
 label_full = {'R': '✊ Rock', 'P': '✋ Paper', 'S': '✌️ Scissors'}
 
+@st.cache_data(ttl=60)
+def is_team_code_used(team_code):
+    github_username = st.secrets['github']['username']
+    github_repo = st.secrets['github']['repo']
+    github_token = st.secrets['github']['token']
+    folder_path = st.secrets['github']['folder']
+
+    url = f"https://api.github.com/repos/{github_username}/{github_repo}/contents/{folder_path}"
+    headers = {"Authorization": f"Bearer {github_token}"}
+    response = requests.get(url, headers=headers)
+
+    if response.status_code == 200:
+        files = response.json()
+        for file in files:
+            if file["name"].startswith(f"{team_code}_") and file["name"].endswith(".json"):
+                return True
+        return False
+    else:
+        st.error("❌ Could not verify previous submissions.")
+        return False
+
 # --- Load valid team codes from GitHub CSV ---
 @st.cache_data(ttl=60)
 def load_team_codes():
@@ -251,11 +272,16 @@ if "team_code" not in st.session_state or not st.session_state.team_code:
         submitted = st.form_submit_button("Start Game")
 
         if submitted:
-            if team_code.strip() in allowed_codes:
-                st.session_state.team_code = team_code.strip()
-                st.session_state.timer_start = time.time()
-                st.success("✅ Valid team code. Starting the game...")
-                st.rerun()
+            team_code = team_code.strip()
+            if team_code in allowed_codes:
+                if is_team_code_used(team_code):
+                    st.error("🚫 This team has already played. You are not allowed to play again.")
+                    st.stop()
+                else:
+                    st.session_state.team_code = team_code
+                    st.session_state.timer_start = time.time()
+                    st.success("✅ Valid team code. Starting the game...")
+                    st.rerun()
             else:
                 st.error("❌ Invalid team code. You are not authorized to play.")
                 st.stop()
