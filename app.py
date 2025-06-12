@@ -11,6 +11,39 @@ import uuid
 # --- Label Map ---
 label_full = {'R': '✊ Rock', 'P': '✋ Paper', 'S': '✌️ Scissors'}
 
+# save the result to github
+def save_result_to_github():
+    result_data = {
+        "team_code": st.session_state.team_code,
+        "timestamp": datetime.now().isoformat(),
+        "win": 1 if st.session_state.stats['Player'] > st.session_state.stats['AI'] else 0
+    }
+    json_content = json.dumps(result_data, indent=2)
+    encoded = base64.b64encode(json_content.encode()).decode()
+
+    unique_id = uuid.uuid4().hex
+    filename = f"{st.session_state.team_code}_{unique_id}.json"
+    filepath = f"{st.secrets['github']['folder']}/{filename}"
+    url = f"https://api.github.com/repos/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/contents/{filepath}"
+
+    headers = {
+        "Authorization": f"Bearer {st.secrets['github']['token']}",
+        "Accept": "application/vnd.github+json"
+    }
+
+    payload = {
+        "message": f"Save result for team {st.session_state.team_code}",
+        "content": encoded
+    }
+
+    put_resp = requests.put(url, headers=headers, json=payload)
+
+    if put_resp.status_code in [200, 201]:
+        return f"https://github.com/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/blob/main/{filepath}"
+    else:
+        raise Exception(f"GitHub upload failed: {put_resp.status_code} — {put_resp.text}")
+
+
 # --- Session Initialization ---
 if "initialized" not in st.session_state:
     st.session_state.round = 1
@@ -253,6 +286,17 @@ if is_game_over():
         st.error(f"## 😢 AI won {ai_wins}-{player_wins}")
     else:
         st.info(f"## 🤝 It's a tie! {player_wins}-{ai_wins}")
+
+# Save results when game is over (only once)
+if is_game_over() and not st.session_state.result_logged:
+    try:
+        file_url = save_result_to_github()
+        st.session_state.saved_file_url = file_url
+        st.session_state.result_logged = True
+        st.success("✅ Result saved to - Thanks.")
+    except Exception as e:
+        st.error("❌ Could not save, please seek advise .")
+        st.write(str(e))
 
 # --- Auto Refresh Logic (Safe) ---
 if (
