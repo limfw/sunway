@@ -39,17 +39,18 @@ def load_manual_scores():
     url = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{MANUAL_SCORE_FILE}"
     return pd.read_csv(url)
 
-# --- Build Team-Level Leaderboard ---
+# --- Build Team-Level Leaderboard (Grouped by Class) ---
 def build_team_leaderboard():
     rps_df = load_rps_results()
     part_df = load_participant_info()
     score_df = load_manual_scores()
 
-    # Normalize keys (uppercase, trimmed)
+    # Normalize keys
     rps_df["team_code"] = rps_df["team_code"].astype(str).str.strip().str.upper()
     part_df["team_code"] = part_df["team_code"].astype(str).str.strip().str.upper()
-    part_df["team_label"] = part_df["team_label"].astype(str).str.strip().str.upper()
+    part_df["Class"] = part_df["Class"].astype(str).str.strip().str.upper()
     score_df["team_label"] = score_df["team_label"].astype(str).str.strip().str.upper()
+    score_df = score_df.rename(columns={"team_label": "Class"})
 
     if rps_df.empty:
         rps_df = pd.DataFrame(columns=['team_code', 'win', 'timestamp'])
@@ -57,15 +58,15 @@ def build_team_leaderboard():
     # Merge RPS results with participant info
     rps_df = pd.merge(rps_df, part_df, on="team_code", how="left")
 
-    # RPS wins per team_label
-    team_rps = rps_df.groupby("team_label")['win'].sum().reset_index(name="game1")
+    # Sum RPS wins by Class
+    team_rps = rps_df.groupby("Class")['win'].sum().reset_index(name="game1")
 
-    # Ensure all teams are included
-    all_teams = part_df[['team_label']].drop_duplicates()
-    team_rps = pd.merge(all_teams, team_rps, on="team_label", how="left").fillna({"game1": 0})
+    # Include all teams even if no RPS played yet
+    all_teams = part_df[['Class']].drop_duplicates()
+    team_rps = pd.merge(all_teams, team_rps, on="Class", how="left").fillna({"game1": 0})
 
-    # Merge with manual game scores
-    merged = pd.merge(score_df, team_rps, on="team_label", how="left").fillna(0)
+    # Merge with manual scores
+    merged = pd.merge(score_df, team_rps, on="Class", how="left").fillna(0)
 
     # Calculate total score
     score_cols = ['game1', 'game2', 'game3', 'game4', 'game5', 'game6']
@@ -74,8 +75,8 @@ def build_team_leaderboard():
     return merged.sort_values("total", ascending=False)
 
 # --- Streamlit UI ---
-st.set_page_config("🏆 Team Leaderboard", layout="centered")
-st.title("🎯 Team Leaderboard: Combined Scores from All 6 Games")
+st.set_page_config("🏆 Class Leaderboard", layout="centered")
+st.title("🎯 Class Leaderboard: Combined Scores from All 6 Games")
 
 df = build_team_leaderboard()
 
@@ -83,7 +84,7 @@ if df.empty:
     st.warning("No results available yet.")
 else:
     st.dataframe(
-        df[['team_label', 'game1', 'game2', 'game3', 'game4', 'game5', 'game6', 'total']],
+        df[['Class', 'game1', 'game2', 'game3', 'game4', 'game5', 'game6', 'total']],
         use_container_width=True
     )
 
