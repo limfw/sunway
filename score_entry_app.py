@@ -31,27 +31,41 @@ def load_scores():
 
 # --- GitHub Upload Function ---
 def upload_to_github(updated_df):
-    headers = {"Authorization": f"Bearer {GITHUB_TOKEN}"}
+    headers = {
+        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json"
+    }
+
+    # Step 1: Get current SHA of file
     get_resp = requests.get(API_URL, headers=headers)
-    if get_resp.status_code == 200:
-        sha = get_resp.json()["sha"]
-    else:
-        st.error("❌ Could not fetch SHA for GitHub file.")
+    if get_resp.status_code != 200:
+        st.error(f"\u274c Failed to fetch file SHA: {get_resp.text}")
         return False
 
-    csv_str = updated_df.to_csv(index=False)
-    encoded = base64.b64encode(csv_str.encode()).decode()
+    sha = get_resp.json()["sha"]
+
+    # Step 2: Prepare content
+    csv_content = updated_df.to_csv(index=False)
+    encoded_content = base64.b64encode(csv_content.encode()).decode()
+
     data = {
-        "message": "Update scores via score_entry_app",
-        "content": encoded,
+        "message": "\u2705 Update manual_scores.csv via score_entry_app",
+        "content": encoded_content,
+        "branch": "main",
         "sha": sha
     }
+
+    # Step 3: PUT request to update file
     put_resp = requests.put(API_URL, headers=headers, json=data)
-    return put_resp.status_code == 200
+    if put_resp.status_code == 200:
+        return True
+    else:
+        st.error(f"\u274c Upload failed: {put_resp.status_code} – {put_resp.text}")
+        return False
 
 # --- Streamlit UI ---
-st.set_page_config("🎯 Enter Game Scores", layout="centered")
-st.title("🎯 Game Score Entry Portal")
+st.set_page_config("\ud83c\udfaf Enter Game Scores", layout="centered")
+st.title("\ud83c\udfaf Game Score Entry Portal")
 st.info("Select a game and enter scores for each class.")
 
 # --- Game Selector ---
@@ -67,23 +81,23 @@ for c in all_classes:
         new_row = {"Class": c}
         for g in range(2, 7):
             new_row[f"game{g}"] = 0
-        scores_df = scores_df.append(new_row, ignore_index=True)
+        scores_df = pd.concat([scores_df, pd.DataFrame([new_row])], ignore_index=True)
 
 scores_df["Class"] = scores_df["Class"].astype(str).str.strip().str.upper()
 scores_df = scores_df.drop_duplicates("Class").reset_index(drop=True)
 
 # --- Score Entry UI ---
-st.markdown("### 📝 Enter scores")
+st.markdown("### \ud83d\udcdd Enter scores")
 updated_scores = {}
 for c in all_classes:
     score = st.number_input(f"{c} score:", min_value=0, max_value=100, step=1, key=c)
     updated_scores[c] = score
 
-if st.button("✅ Submit Scores"):
+if st.button("\u2705 Submit Scores"):
     for c in updated_scores:
         scores_df.loc[scores_df["Class"] == c, game_option] = updated_scores[c]
 
     if upload_to_github(scores_df):
-        st.success("✅ Scores updated successfully to GitHub!")
+        st.success("\u2705 Scores updated successfully to GitHub!")
     else:
-        st.error("❌ Failed to upload scores.")
+        st.error("\u274c Failed to upload scores.")
