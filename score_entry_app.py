@@ -64,7 +64,7 @@ def upload_to_github(updated_df):
         return False
 
 # --- Streamlit UI ---
-st.set_page_config("\ud83c\udfaf Enter Game Scores", layout="centered")
+st.set_page_config(page_title="\ud83c\udfaf Enter Game Scores", layout="centered")
 st.title("\ud83c\udfaf Game Score Entry Portal")
 st.info("Select a game and enter scores for each class.")
 
