@@ -289,21 +289,24 @@ if is_game_over():
 
 # Save results when game is over (only once)
 if is_game_over() and not st.session_state.result_logged:
+    st.session_state.result_logged = True
     try:
         file_url = save_result_to_github()
         st.session_state.saved_file_url = file_url
-        st.session_state.result_logged = True
         st.success("✅ Result saved to - Thanks.")
     except Exception as e:
         st.error("❌ Could not save, please seek advise .")
         st.write(str(e))
 
 # --- Auto Refresh Logic (Safe) ---
+# Only auto-rerun when game is still ongoing
 if (
     "timer_start" in st.session_state and
     st.session_state.timer_start is not None and
     remaining_time > 0 and
-    not st.session_state.game_over
+    not st.session_state.game_over and
+    not st.session_state.result_logged  # ✅ Don't rerun after logging
 ):
     time.sleep(1)
     st.rerun()
+
