@@ -160,41 +160,46 @@ def update_streaks(result):
 
 # --- Save Result Function Updated ---
 def save_result_to_github():
+    # Minimal data: win=1/0 and timestamp
     result_data = {
         "team_code": st.session_state.team_code,
-        "result": 1 if st.session_state.stats["Player"] > st.session_state.stats["AI"] else 0
+        "timestamp": datetime.now().isoformat(),
+        "win": 1 if st.session_state.stats['Player'] > st.session_state.stats['AI'] else 0
     }
 
     json_content = json.dumps(result_data, indent=2)
     encoded = base64.b64encode(json_content.encode()).decode()
 
-    filename = f"{st.secrets['github']['folder']}/{st.session_state.filename}"
-    url = f"https://api.github.com/repos/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/contents/{filename}"
+    filename = f"{st.session_state.team_code}.json"
+    filepath = f"{st.secrets['github']['folder']}/{filename}"
+    url = f"https://api.github.com/repos/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/contents/{filepath}"
 
     headers = {
         "Authorization": f"Bearer {st.secrets['github']['token']}",
         "Accept": "application/vnd.github+json"
     }
 
+    # Step 1: Check if file already exists to get SHA
+    get_resp = requests.get(url, headers=headers)
+    if get_resp.status_code == 200:
+        sha = get_resp.json()["sha"]
+    else:
+        sha = None
+
+    # Step 2: PUT to GitHub (create or update)
     payload = {
-        "message": f"Save result for {st.session_state.team_code}",
+        "message": f"Save result for team {st.session_state.team_code}",
         "content": encoded
     }
+    if sha:
+        payload["sha"] = sha
 
-    # Always get latest SHA if file exists
-    check = requests.get(url, headers=headers)
-    if check.status_code == 200:
-        sha = check.json().get("sha")
-        if sha:
-            payload["sha"] = sha  # Ensure latest version is being updated
+    put_resp = requests.put(url, headers=headers, json=payload)
 
-    # Upload or update
-    response = requests.put(url, headers=headers, json=payload)
-
-    if response.status_code in [200, 201]:
-        return f"https://github.com/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/blob/main/{filename}"
+    if put_resp.status_code in [200, 201]:
+        return f"https://github.com/{st.secrets['github']['username']}/{st.secrets['github']['repo']}/blob/main/{filepath}"
     else:
-        raise Exception(f"GitHub upload failed: {response.status_code} — {response.text}")
+        raise Exception(f"GitHub upload failed: {put_resp.status_code} — {put_resp.text}")
 
 
 
