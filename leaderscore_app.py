@@ -11,7 +11,7 @@ PARTICIPANT_FILE = "participant.csv"
 MANUAL_SCORE_FILE = "manual_scores.csv"
 
 # --- Load RPS Results (Game 1) ---
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=30)
 def load_rps_results():
     url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{GITHUB_REPO}/contents/{GITHUB_FOLDER}"
     headers = {"Authorization": f"Bearer {GITHUB_TOKEN}"}
