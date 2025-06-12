@@ -7,7 +7,7 @@ from datetime import datetime
 import os
 import requests
 import base64
-
+import uuid
 
 # --- Label Map ---
 label_full = {'R': '✊ Rock', 'P': '✋ Paper', 'S': '✌️ Scissors'}
