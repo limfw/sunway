@@ -29,7 +29,7 @@ if "round" not in st.session_state:
     st.session_state.team_name = ""
     st.session_state.team_code = ""
     st.session_state.result_logged = False
-    st.session_state.timer_start = time.time()
+    #st.session_state.timer_start = time.time()
 
 # --- Countdown Clock ---
 remaining_time = 60 - int(time.time() - st.session_state.timer_start)
@@ -229,6 +229,7 @@ if "team_code" not in st.session_state or not st.session_state.team_code:
         team_name = st.text_input("Enter Team Name")
         team_code = st.text_input("Enter Team Code")
         submitted = st.form_submit_button("Start Game")
+        st.session_state.timer_start = time.time()
 
         if submitted:
             if "team_code" in st.session_state and st.session_state.team_code:
