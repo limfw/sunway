@@ -39,4 +39,53 @@ def load_manual_scores():
     url = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{MANUAL_SCORE_FILE}"
     return pd.read_csv(url)
 
-# --- Build Team-Level Leaderboa
+# --- Build Team-Level Leaderboard ---
+def build_team_leaderboard():
+    rps_df = load_rps_results()
+    part_df = load_participant_info()
+    score_df = load_manual_scores()
+
+    # Normalize keys (uppercase, trimmed)
+    rps_df["team_code"] = rps_df["team_code"].astype(str).str.strip().str.upper()
+    part_df["team_code"] = part_df["team_code"].astype(str).str.strip().str.upper()
+    part_df["team_label"] = part_df["team_label"].astype(str).str.strip().str.upper()
+    score_df["team_label"] = score_df["team_label"].astype(str).str.strip().str.upper()
+
+    if rps_df.empty:
+        rps_df = pd.DataFrame(columns=['team_code', 'win', 'timestamp'])
+
+    # Merge RPS results with participant info
+    rps_df = pd.merge(rps_df, part_df, on="team_code", how="left")
+
+    # RPS wins per team_label
+    team_rps = rps_df.groupby("team_label")['win'].sum().reset_index(name="game1")
+
+    # Ensure all teams are included
+    all_teams = part_df[['team_label']].drop_duplicates()
+    team_rps = pd.merge(all_teams, team_rps, on="team_label", how="left").fillna({"game1": 0})
+
+    # Merge with manual game scores
+    merged = pd.merge(score_df, team_rps, on="team_label", how="left").fillna(0)
+
+    # Calculate total score
+    score_cols = ['game1', 'game2', 'game3', 'game4', 'game5', 'game6']
+    merged['total'] = merged[score_cols].sum(axis=1)
+
+    return merged.sort_values("total", ascending=False)
+
+# --- Streamlit UI ---
+st.set_page_config("🏆 Team Leaderboard", layout="centered")
+st.title("🎯 Team Leaderboard: Combined Scores from All 6 Games")
+
+df = build_team_leaderboard()
+
+if df.empty:
+    st.warning("No results available yet.")
+else:
+    st.dataframe(
+        df[['team_label', 'game1', 'game2', 'game3', 'game4', 'game5', 'game6', 'total']],
+        use_container_width=True
+    )
+
+    csv = df.to_csv(index=False)
+    st.download_button("📥 Download Leaderboard as CSV", data=csv, file_name="leaderboard.csv", mime="text/csv")
