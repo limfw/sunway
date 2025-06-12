@@ -48,7 +48,7 @@ def load_team_codes():
         codes = response.text.strip().splitlines()
         return [c.strip() for c in codes if c.strip()]
     else:
-        st.error("🚫 Unable to load team codes from GitHub.")
+        st.error("🚫 Unable to load team codes - please seek for advice.")
         return []
 
 
@@ -361,7 +361,7 @@ if is_game_over() and not st.session_state.result_logged:
     try:
         file_url = save_result_to_github()
         st.session_state.saved_file_url = file_url
-        st.success("✅ Result saved to - Thanks.")
+        st.success("✅ Result saved - Thanks.")
     except Exception as e:
         st.error("❌ Could not save, please seek advise .")
         st.write(str(e))
