@@ -29,7 +29,7 @@ if "round" not in st.session_state:
     st.session_state.team_name = ""
     st.session_state.team_code = ""
     st.session_state.result_logged = False
-    st.session_state.timer_start = time.time()
+    # st.session_state.timer_start = time.time()  ❌
 
 # --- Countdown Clock ---
 remaining_time = 60 - int(time.time() - st.session_state.timer_start)
@@ -231,6 +231,9 @@ if "team_code" not in st.session_state or not st.session_state.team_code:
         submitted = st.form_submit_button("Start Game")
 
         if submitted:
+            if "timer_start" not in st.session_state or st.session_state.timer_start is None:
+                st.session_state.timer_start = time.time()
+        
             if "team_code" in st.session_state and st.session_state.team_code:
                 st.warning("Game already in session. Please do not refresh.")
                 st.stop()
@@ -335,6 +338,10 @@ if not st.session_state.result_logged:
         st.error("❌ Could not save Github.")
         st.write(str(e))
 
+if "timer_start" in st.session_state:
+    remaining_time = 60 - int(time.time() - st.session_state.timer_start)
+else:
+    remaining_time = 60
 
 if remaining_time > 0 and not st.session_state.game_over:
     time.sleep(1)
