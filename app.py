@@ -346,6 +346,14 @@ if not st.session_state.result_logged:
         st.write(str(e))
 
 
-if remaining_time > 0 and not st.session_state.game_over:
+#if remaining_time > 0 and not st.session_state.game_over:
+#    time.sleep(1)
+#    st.rerun()
+if (
+    "timer_start" in st.session_state 
+    and st.session_state.timer_start is not None 
+    and remaining_time > 0 
+    and not st.session_state.game_over
+):
     time.sleep(1)
     st.rerun()
