@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import requests
-from datetime import datetime
+import altair as alt
 
 # --- GitHub Config ---
 GITHUB_USERNAME = "limfw"
@@ -66,7 +66,7 @@ def build_team_leaderboard():
     return merged.sort_values("total", ascending=False).reset_index(drop=True)
 
 # --- Streamlit UI ---
-st.set_page_config(page_title="🏆 Class Leaderboard", layout="centered")
+st.set_page_config(page_title="🏆 Class Leaderboard", layout="wide")
 st.title("🎯 Class Leaderboard: Combined Scores from All 6 Games")
 
 df = build_team_leaderboard()
@@ -74,15 +74,28 @@ df = build_team_leaderboard()
 if df.empty:
     st.warning("No results available yet.")
 else:
-    st.subheader("🏅 Top 3 Teams")
+    # --- Top 3 Cards ---
     top3 = df.head(3).copy()
-    top3_display = top3[['Class', 'total']]
-    top3_display.index = ["🥇 1st", "🥈 2nd", "🥉 3rd"]
-    st.table(top3_display)
+    col1, col2, col3 = st.columns(3)
+    col1.metric("🥇 1st", top3.loc[0, "Class"], f"{int(top3.loc[0, 'total'])} pts")
+    col2.metric("🥈 2nd", top3.loc[1, "Class"], f"{int(top3.loc[1, 'total'])} pts")
+    col3.metric("🥉 3rd", top3.loc[2, "Class"], f"{int(top3.loc[2, 'total'])} pts")
 
     st.divider()
 
-    st.subheader("📋 Full Leaderboard")
+    # --- Bar Chart ---
+    st.subheader("📊 Total Score by Class")
+    bar_chart = alt.Chart(df).mark_bar().encode(
+        x=alt.X("total:Q", title="Total Score"),
+        y=alt.Y("Class:N", sort='-x', title="Class"),
+        tooltip=["Class", "total"]
+    ).properties(height=400)
+    st.altair_chart(bar_chart, use_container_width=True)
+
+    st.divider()
+
+    # --- Full Leaderboard Table ---
+    st.subheader("📋 Full Leaderboard Table")
     st.dataframe(
         df[['Class', 'game1', 'game2', 'game3', 'game4', 'game5', 'game6', 'total']],
         use_container_width=True
