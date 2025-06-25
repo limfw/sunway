@@ -132,36 +132,75 @@ else:
         unsafe_allow_html=True
     )
 
+# ... (keep all previous imports and setup code the same until the display section) ...
+
     st.markdown("## 📋 Full Results")
     
-    # Display with renamed columns and game1 last
+    # Display with full column names
     display_df = df.copy()
-    # Rename columns using GAME_NAMES
     display_df = display_df.rename(columns=GAME_NAMES)
+    display_df = display_df.rename(columns={'total': 'Total Score'})
+    
     # Reorder columns to put Rock-paper-scissor last
     column_order = ['Class', 'Dodge ball', 'Captain ball', 'Graph-theoretical', 
-                   'Topological', 'Logic and Recreation game', 'Rock-paper-scissor', 'total']
+                   'Topological', 'Logic and Recreation game', 'Rock-paper-scissor', 'Total Score']
     display_df = display_df[column_order]
-    
-    # Configure the dataframe display to show all columns fully
+
+    # Custom CSS for better table display
+    st.markdown("""
+    <style>
+        /* Main table styling */
+        div[data-testid="stDataFrame"] {
+            width: 100% !important;
+        }
+        
+        /* Header styling */
+        .stDataFrame thead tr th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            text-align: center !important;
+            position: sticky;
+            top: 0;
+        }
+        
+        /* Cell styling */
+        .stDataFrame td {
+            text-align: center !important;
+            padding: 8px 12px !important;
+        }
+        
+        /* Zebra striping */
+        .stDataFrame tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        /* Hover effect */
+        .stDataFrame tbody tr:hover {
+            background-color: #e9ecef;
+        }
+        
+        /* Remove index column */
+        .stDataFrame thead tr th:first-child,
+        .stDataFrame tbody tr th {
+            display: none !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Display the dataframe with optimized settings
     st.dataframe(
-        display_df.style
-            .set_properties(**{
-                'text-align': 'center',
-                'min-width': '80px',
-                'font-size': '14px'
-            })
-            .format(precision=0),
+        display_df,
         use_container_width=True,
-        height=(len(display_df) * 35 + 35),
+        hide_index=True,
+        height=min(800, (len(display_df) * 35 + 35)),  # Limits height to 800px max
         column_config={
-            "Class": st.column_config.TextColumn("Class", width="small"),
-            "Dodge ball": st.column_config.NumberColumn("Dodgeball", width="small"),
-            "Captain ball": st.column_config.NumberColumn("Captain Ball", width="small"),
+            "Class": st.column_config.TextColumn("Class", width="medium"),
+            "Dodge ball": st.column_config.NumberColumn("Dodge ball", width="small"),
+            "Captain ball": st.column_config.NumberColumn("Captain ball", width="small"),
             "Graph-theoretical": st.column_config.NumberColumn("Graph-theoretical", width="small"),
             "Topological": st.column_config.NumberColumn("Topological", width="small"),
-            "Logic & Rec": st.column_config.NumberColumn("Logic and Recreation", width="small"),
-            "RPS": st.column_config.NumberColumn("Rock-paper-scissor", width="small"),
-            "Total": st.column_config.NumberColumn("Total", width="small")
+            "Logic and Recreation game": st.column_config.NumberColumn("Logic and Recreation game", width="medium"),
+            "Rock-paper-scissor": st.column_config.NumberColumn("Rock-paper-scissor", width="medium"),
+            "Total Score": st.column_config.NumberColumn("Total Score", width="small")
         }
     )
