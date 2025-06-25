@@ -107,33 +107,28 @@ for c in all_classes:
     score = st.number_input(f"Team {c} score:", min_value=0, max_value=100, step=1, key=c)
     updated_scores[c] = score
 
+# --- Submit and Upload ---
 if st.button("✅ Submit Scores"):
     for c in updated_scores:
         scores_df.loc[scores_df["Class"] == c, game_option] = updated_scores[c]
 
     # Recalculate Total Score
-    game_columns = ["game2", "game3", "game4", "game5", "game6", "game1"]
-    scores_df["Total"] = scores_df[game_columns].sum(axis=1)
+    game_order = ["game2", "game3", "game4", "game5", "game6", "game1"]
+    scores_df["Total"] = scores_df[game_order].sum(axis=1)
 
     # Reorder columns
-    ordered_cols = ["Class"] + game_columns + ["Total"]
+    ordered_cols = ["Class"] + game_order + ["Total"]
     scores_df = scores_df[ordered_cols]
 
-    # Upload
     if upload_to_github(scores_df):
         st.success("✅ Scores updated successfully to GitHub!")
     else:
         st.error("❌ Failed to upload scores.")
 
 # --- Display Leaderboard ---
-st.markdown("## 🏆 Current Leaderboard")
-
-# Recalculate Total in case of cache mismatch
-game_columns = ["game2", "game3", "game4", "game5", "game6", "game1"]
-scores_df["Total"] = scores_df[game_columns].sum(axis=1)
-ordered_cols = ["Class"] + game_columns + ["Total"]
-scores_df = scores_df[ordered_cols]
-
-# Sort by total descending
-leaderboard = scores_df.sort_values("Total", ascending=False).reset_index(drop=True)
+st.markdown("## 🏆 Leaderboard (Sorted by Total Score)")
+game_order = ["game2", "game3", "game4", "game5", "game6", "game1"]
+scores_df["Total"] = scores_df[game_order].sum(axis=1)
+ordered_cols = ["Class"] + game_order + ["Total"]
+leaderboard = scores_df[ordered_cols].sort_values(by="Total", ascending=False).reset_index(drop=True)
 st.dataframe(leaderboard, use_container_width=True)
