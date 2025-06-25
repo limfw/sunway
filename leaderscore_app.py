@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import requests
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # For top 3 bar chart
 
 # --- GitHub Config ---
 GITHUB_USERNAME = "limfw"
@@ -9,14 +9,14 @@ GITHUB_REPO = "sunway"
 SCORE_FILE = "manual_scores.csv"
 RAW_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{SCORE_FILE}"
 
-# Game name mappings (game1 last)
+# Game name mappings (game1 intentionally last)
 GAME_NAMES = {
     "game2": "DodgeBall",
     "game3": "Captain Ball",
     "game4": "Graph-Theoretical",
     "game5": "Topological",
     "game6": "Logic and Recreation",
-    "game1": "Rock-paper-scissors"  # Last as requested
+    "game1": "Rock-paper-scissors"  # Last column as requested
 }
 
 # --- Load Scores ---
@@ -28,14 +28,15 @@ def load_scores():
 
 # --- Calculate Leaderboard ---
 def calculate_leaderboard(df):
-    # Get columns in order (game1 last)
-    game_columns = sorted(
-        [col for col in df.columns if col.startswith("game")],
-        key=lambda x: (x != "game1", x)  # Forces game1 to end
-    )
+    # Define column order (game2 to game6 first, game1 last)
+    game_columns = [f"game{i}" for i in range(2,7)] + ["game1"]
+    game_columns = [col for col in game_columns if col in df.columns]
     
+    # Calculate totals and rank
     df['Total'] = df[game_columns].sum(axis=1)
     df['Rank'] = df['Total'].rank(method='min', ascending=False).astype(int)
+    
+    # Return with specified column order
     return df.sort_values('Rank')[['Rank', 'Class', 'Total'] + game_columns]
 
 # --- Streamlit UI ---
@@ -54,7 +55,7 @@ try:
     ax.barh(
         top3['Class'], 
         top3['Total'],
-        color=['gold', 'silver', 'brown']  # Gold/Silver/Bronze colors
+        color=['gold', 'silver', 'brown']  # Medal colors
     )
     ax.set_xlabel("Total Score")
     ax.invert_yaxis()  # Highest score on top
@@ -71,7 +72,7 @@ try:
                 "Rank": st.column_config.NumberColumn(width="small"),
                 "Class": st.column_config.TextColumn("Team"),
                 "Total": st.column_config.NumberColumn("Total Score"),
-                **{col: st.column_config.NumberColumn(GAME_NAMES.get(col, col)) 
+                **{col: st.column_config.NumberColumn(GAME_NAMES[col]) 
                    for col in leaderboard.columns if col.startswith("game")}
             },
             hide_index=True,
@@ -84,7 +85,7 @@ try:
             "Select Game:",
             options=list(GAME_NAMES.keys()),
             format_func=lambda x: GAME_NAMES[x],
-            index=1  # Default to game2 (DodgeBall)
+            index=0  # Default to first game (DodgeBall)
         )
         
         game_rank = scores_df[['Class', selected_game]] \
@@ -101,8 +102,8 @@ try:
         )
 
 except Exception as e:
-    st.error(f"Error loading data: {str(e)}")
+    st.error(f"❌ Error loading data: {str(e)}")
 
-if st.button("Refresh Data"):
+if st.button("🔄 Refresh Data"):
     st.cache_data.clear()
     st.rerun()
