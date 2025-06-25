@@ -119,7 +119,21 @@ if st.button("✅ Submit Scores"):
     ordered_cols = ["Class"] + game_columns + ["Total"]
     scores_df = scores_df[ordered_cols]
 
+    # Upload
     if upload_to_github(scores_df):
         st.success("✅ Scores updated successfully to GitHub!")
     else:
         st.error("❌ Failed to upload scores.")
+
+# --- Display Leaderboard ---
+st.markdown("## 🏆 Current Leaderboard")
+
+# Recalculate Total in case of cache mismatch
+game_columns = ["game2", "game3", "game4", "game5", "game6", "game1"]
+scores_df["Total"] = scores_df[game_columns].sum(axis=1)
+ordered_cols = ["Class"] + game_columns + ["Total"]
+scores_df = scores_df[ordered_cols]
+
+# Sort by total descending
+leaderboard = scores_df.sort_values("Total", ascending=False).reset_index(drop=True)
+st.dataframe(leaderboard, use_container_width=True)
