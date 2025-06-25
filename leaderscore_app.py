@@ -34,7 +34,7 @@ def load_participant_info():
     url = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{PARTICIPANT_FILE}"
     return pd.read_csv(url)
 
-# --- Load manual_scores.csv (Base64 GitHub API) ---
+# --- Load manual_scores.csv ---
 @st.cache_data(ttl=30)
 def load_manual_scores():
     url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{GITHUB_REPO}/contents/{MANUAL_SCORE_FILE}"
@@ -119,8 +119,19 @@ else:
         unsafe_allow_html=True
     )
 
+    # Display full leaderboard with renamed column labels
     st.markdown("## 📋 Full Results")
-    st.dataframe(
-        df[['Class', 'game2', 'game3', 'game4', 'game5', 'game6', 'game1', 'total']],
-        use_container_width=True
-    )
+
+    DISPLAY_NAMES = {
+        "game1": "Rock-paper-scissors",
+        "game2": "Dodge ball",
+        "game3": "Captain ball",
+        "game4": "Graph-theoretical",
+        "game5": "Topological",
+        "game6": "Logic & Recreation"
+    }
+
+    display_df = df[["Class", "game2", "game3", "game4", "game5", "game6", "game1", "total"]].copy()
+    display_df.rename(columns={k: v for k, v in DISPLAY_NAMES.items()}, inplace=True)
+
+    st.dataframe(display_df, use_container_width=True)
