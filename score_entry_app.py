@@ -103,7 +103,7 @@ scores_df = scores_df.drop_duplicates("Class").reset_index(drop=True)
 st.markdown(f"### 📝 Enter scores for {GAME_NAMES[game_option]}")
 updated_scores = {}
 for c in all_classes:
-    score = st.number_input(f"{c} score:", min_value=0, max_value=100, step=1, key=c)
+    score = st.number_input(f"{c} Team score:", min_value=0, max_value=100, step=1, key=c)
     updated_scores[c] = score
 
 if st.button("✅ Submit Scores"):
