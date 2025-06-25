@@ -14,6 +14,15 @@ SCORE_FILE = "manual_scores.csv"
 RAW_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{SCORE_FILE}"
 API_URL = f"https://api.github.com/repos/{GITHUB_USERNAME}/{GITHUB_REPO}/contents/{SCORE_FILE}"
 
+# Game name mappings
+GAME_NAMES = {
+    "game2": "Dodge ball",
+    "game3": "Captain ball",
+    "game4": "Graph-theoretical",
+    "game5": "Topological",
+    "game6": "Logic and Recreation game"
+}
+
 # --- Load Participant Info ---
 @st.cache_data(ttl=60)
 def load_class_list():
@@ -69,7 +78,11 @@ st.title("🎯 Game Score Entry Portal")
 st.info("Select a game and enter scores for each class.")
 
 # --- Game Selector ---
-game_option = st.selectbox("Select game to enter score (Game 2 to Game 6):", [f"game{i}" for i in range(2, 7)])
+game_option = st.selectbox(
+    "Select game to enter score:", 
+    options=list(GAME_NAMES.keys()),
+    format_func=lambda x: GAME_NAMES[x]
+)
 
 # --- Load Data ---
 all_classes = load_class_list()
@@ -87,7 +100,7 @@ scores_df["Class"] = scores_df["Class"].astype(str).str.strip().str.upper()
 scores_df = scores_df.drop_duplicates("Class").reset_index(drop=True)
 
 # --- Score Entry UI ---
-st.markdown("### 📝 Enter scores")
+st.markdown(f"### 📝 Enter scores for {GAME_NAMES[game_option]}")
 updated_scores = {}
 for c in all_classes:
     score = st.number_input(f"{c} score:", min_value=0, max_value=100, step=1, key=c)
