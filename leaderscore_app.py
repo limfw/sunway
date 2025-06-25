@@ -143,7 +143,21 @@ else:
                    'Topological', 'Logic and Recreation game', 'Rock-paper-scissor', 'total']
     display_df = display_df[column_order]
     
+    # Configure the dataframe display to show all columns fully
     st.dataframe(
-        display_df,
-        use_container_width=True
+        display_df.style
+            .set_properties(**{'text-align': 'center'})
+            .format(precision=0),
+        use_container_width=True,
+        height=(len(display_df) * 35 + 35),  # Dynamic height based on rows
+        column_config={
+            "Class": st.column_config.TextColumn("Class", width="medium"),
+            "Dodge ball": st.column_config.NumberColumn("Dodge ball", width="small"),
+            "Captain ball": st.column_config.NumberColumn("Captain ball", width="small"),
+            "Graph-theoretical": st.column_config.NumberColumn("Graph-theoretical", width="small"),
+            "Topological": st.column_config.NumberColumn("Topological", width="small"),
+            "Logic and Recreation game": st.column_config.NumberColumn("Logic & Rec", width="small"),
+            "Rock-paper-scissor": st.column_config.NumberColumn("RPS", width="small"),
+            "total": st.column_config.NumberColumn("Total", width="small")
+        }
     )
