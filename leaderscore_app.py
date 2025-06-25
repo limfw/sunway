@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import requests
+import base64
+import io
 
 # --- GitHub Config ---
 GITHUB_USERNAME = "limfw"
@@ -9,6 +11,16 @@ GITHUB_TOKEN = st.secrets['github']['token']
 GITHUB_FOLDER = "results"
 PARTICIPANT_FILE = "participant.csv"
 MANUAL_SCORE_FILE = "manual_scores.csv"
+
+# Game name mappings (consistent with the first app)
+GAME_NAMES = {
+    "game1": "Rock-paper-scissor",
+    "game2": "Dodge ball",
+    "game3": "Captain ball",
+    "game4": "Graph-theoretical",
+    "game5": "Topological",
+    "game6": "Logic and Recreation game"
+}
 
 # --- Load RPS Results (Game 1) ---
 @st.cache_data(ttl=30)
@@ -33,14 +45,6 @@ def load_participant_info():
     return pd.read_csv(url)
 
 # --- Load manual_scores.csv ---
-#@st.cache_data(ttl=30)
-#def load_manual_scores():
-#    url = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{MANUAL_SCORE_FILE}"
-#    return pd.read_csv(url)
-
-import base64
-import io
-
 @st.cache_data(ttl=30)
 def load_manual_scores():
     url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{GITHUB_REPO}/contents/{MANUAL_SCORE_FILE}"
@@ -54,7 +58,6 @@ def load_manual_scores():
     else:
         st.error("❌ Failed to load manual_scores.csv from GitHub")
         return pd.DataFrame()
-
 
 # --- Build Team-Level Leaderboard ---
 def build_team_leaderboard():
@@ -74,22 +77,24 @@ def build_team_leaderboard():
     team_rps = rps_df.groupby("Class")['win'].sum().reset_index(name="game1")
     all_teams = part_df[['Class']].drop_duplicates()
     team_rps = pd.merge(all_teams, team_rps, on="Class", how="left").fillna({"game1": 0})
+    
+    # Merge scores with game1 (Rock-paper-scissor) coming from RPS results
     merged = pd.merge(score_df, team_rps, on="Class", how="left").fillna(0)
-
-    score_cols = ['game1', 'game2', 'game3', 'game4', 'game5', 'game6']
-    merged['total'] = merged[score_cols].sum(axis=1)
-
+    
+    # Reorder columns to put game1 last
+    score_cols = ['game2', 'game3', 'game4', 'game5', 'game6', 'game1']
+    merged['total'] = merged[score_cols + ['game1']].sum(axis=1)  # Include all games in total calculation
+    
     return merged.sort_values("total", ascending=False).reset_index(drop=True)
 
 # --- Streamlit UI ---
 st.set_page_config("🏆 MATRIX Leaderboard", layout="centered")
-st.title("🏆Top Teams Across All 6 Games")
+st.title("🏆 Top Teams Across All 6 Games")
 
 # --- Manual Refresh Button ---
 if st.button("🔁 Refresh Leaderboard Now"):
     st.cache_data.clear()
     st.experimental_rerun()
-
 
 df = build_team_leaderboard()
 
@@ -128,7 +133,17 @@ else:
     )
 
     st.markdown("## 📋 Full Results")
+    
+    # Display with renamed columns and game1 last
+    display_df = df.copy()
+    # Rename columns using GAME_NAMES
+    display_df = display_df.rename(columns=GAME_NAMES)
+    # Reorder columns to put Rock-paper-scissor last
+    column_order = ['Class', 'Dodge ball', 'Captain ball', 'Graph-theoretical', 
+                   'Topological', 'Logic and Recreation game', 'Rock-paper-scissor', 'total']
+    display_df = display_df[column_order]
+    
     st.dataframe(
-        df[['Class', 'game1', 'game2', 'game3', 'game4', 'game5', 'game6', 'total']],
+        display_df,
         use_container_width=True
     )
