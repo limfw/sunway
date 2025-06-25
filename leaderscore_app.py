@@ -199,7 +199,7 @@ else:
             "Captain ball": st.column_config.NumberColumn("Captain ball", width="small"),
             "Graph-theoretical": st.column_config.NumberColumn("Graph-theoretical", width="small"),
             "Topological": st.column_config.NumberColumn("Topological", width="small"),
-            "Logic and Recreation game": st.column_config.NumberColumn("Logic and Recreation game", width="medium"),
+            "Logic and Recreation game": st.column_config.NumberColumn("Logic & Recreation", width="medium"),
             "Rock-paper-scissor": st.column_config.NumberColumn("Rock-paper-scissor", width="medium"),
             "Total Score": st.column_config.NumberColumn("Total Score", width="small")
         }
