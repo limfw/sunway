@@ -119,7 +119,7 @@ else:
         unsafe_allow_html=True
     )
 
-    # Display full leaderboard with renamed column labels
+    # Display full leaderboard with renamed column labels and no index
     st.markdown("## 📋 Full Results")
 
     DISPLAY_NAMES = {
@@ -132,6 +132,6 @@ else:
     }
 
     display_df = df[["Class", "game2", "game3", "game4", "game5", "game6", "game1", "total"]].copy()
-    display_df.rename(columns={k: v for k, v in DISPLAY_NAMES.items()}, inplace=True)
+    display_df.rename(columns={**DISPLAY_NAMES, "Class": "Team"}, inplace=True)
 
-    st.dataframe(display_df, use_container_width=True)
+    st.dataframe(display_df, use_container_width=True, hide_index=True)
