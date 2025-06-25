@@ -55,15 +55,20 @@ def build_team_leaderboard():
     part_df = load_participant_info()
     score_df = load_manual_scores()
 
-    rps_df["team_code"] = rps_df["team_code"].astype(str).str.strip().str.upper()
     part_df["team_code"] = part_df["team_code"].astype(str).str.strip().str.upper()
     part_df["Class"] = part_df["Class"].astype(str).str.strip().str.upper()
     score_df["Class"] = score_df["Class"].astype(str).str.strip().str.upper()
 
-    if rps_df.empty:
+    # ✅ Check if RPS file exists and has required columns
+    if rps_df.empty or "team_code" not in rps_df.columns:
+        st.warning("⚠️ No valid RPS (Game 1) results found.")
         rps_df = pd.DataFrame(columns=['team_code', 'win', 'timestamp'])
 
-    rps_df = pd.merge(rps_df, part_df, on="team_code", how="left")
+    else:
+        rps_df["team_code"] = rps_df["team_code"].astype(str).str.strip().str.upper()
+        rps_df = pd.merge(rps_df, part_df, on="team_code", how="left")
+
+    # --- Aggregate RPS scores ---
     team_rps = rps_df.groupby("Class")['win'].sum().reset_index(name="game1")
     all_teams = part_df[['Class']].drop_duplicates()
     team_rps = pd.merge(all_teams, team_rps, on="Class", how="left").fillna({"game1": 0})
@@ -91,7 +96,6 @@ else:
     st.markdown("## 🏅 Top 3 Teams")
 
     def format_class(c): return str(c).upper().strip()
-
     top3 = df.head(3).copy()
     top3["Class"] = top3["Class"].apply(format_class)
 
