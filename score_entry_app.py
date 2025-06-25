@@ -16,11 +16,11 @@ API_URL = f"https://api.github.com/repos/{GITHUB_USERNAME}/{GITHUB_REPO}/content
 
 # Game name mappings
 GAME_NAMES = {
-    "game2": "Dodge ball",
-    "game3": "Captain ball",
-    "game4": "Graph-theoretical",
+    "game2": "DodgeBall",
+    "game3": "Captain Ball",
+    "game4": "Graph-Theoretical",
     "game5": "Topological",
-    "game6": "Logic and Recreation game"
+    "game6": "Logic and Recreation"
 }
 
 # --- Load Participant Info ---
