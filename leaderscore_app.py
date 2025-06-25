@@ -59,17 +59,16 @@ def build_team_leaderboard():
     part_df["Class"] = part_df["Class"].astype(str).str.strip().str.upper()
     score_df["Class"] = score_df["Class"].astype(str).str.strip().str.upper()
 
-    # ✅ Check if RPS file exists and has required columns
+    # Safe fallback if no RPS JSON files exist
     if rps_df.empty or "team_code" not in rps_df.columns:
-        st.warning("⚠️ No valid RPS (Game 1) results found.")
-        rps_df = pd.DataFrame(columns=['team_code', 'win', 'timestamp'])
-
+        rps_df = pd.DataFrame(columns=['team_code', 'win', 'timestamp', 'Class'])
+        team_rps = part_df[['Class']].drop_duplicates()
+        team_rps["game1"] = 0
     else:
         rps_df["team_code"] = rps_df["team_code"].astype(str).str.strip().str.upper()
         rps_df = pd.merge(rps_df, part_df, on="team_code", how="left")
+        team_rps = rps_df.groupby("Class")['win'].sum().reset_index(name="game1")
 
-    # --- Aggregate RPS scores ---
-    team_rps = rps_df.groupby("Class")['win'].sum().reset_index(name="game1")
     all_teams = part_df[['Class']].drop_duplicates()
     team_rps = pd.merge(all_teams, team_rps, on="Class", how="left").fillna({"game1": 0})
     merged = pd.merge(score_df, team_rps, on="Class", how="left").fillna(0)
@@ -127,12 +126,12 @@ else:
     st.markdown("## 📋 Full Results")
 
     DISPLAY_NAMES = {
-        "game1": "Rock-Paper-Scissors",
         "game2": "Dodgeball",
         "game3": "Captain Ball",
         "game4": "Graph Theoretical",
         "game5": "Topological",
-        "game6": "Logic & Recreation"
+        "game6": "Logic & Recreation",
+        "game1": "Rock-Paper-Scissors"
     }
 
     display_df = df[["Class", "game2", "game3", "game4", "game5", "game6", "game1", "total"]].copy()
