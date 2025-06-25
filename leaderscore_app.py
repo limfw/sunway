@@ -146,18 +146,22 @@ else:
     # Configure the dataframe display to show all columns fully
     st.dataframe(
         display_df.style
-            .set_properties(**{'text-align': 'center'})
+            .set_properties(**{
+                'text-align': 'center',
+                'min-width': '80px',
+                'font-size': '14px'
+            })
             .format(precision=0),
         use_container_width=True,
-        height=(len(display_df) * 35 + 35),  # Dynamic height based on rows
+        height=(len(display_df) * 35 + 35),
         column_config={
-            "Class": st.column_config.TextColumn("Class", width="medium"),
-            "Dodge ball": st.column_config.NumberColumn("Dodge ball", width="small"),
-            "Captain ball": st.column_config.NumberColumn("Captain ball", width="small"),
-            "Graph-theoretical": st.column_config.NumberColumn("Graph-theoretical", width="small"),
-            "Topological": st.column_config.NumberColumn("Topological", width="small"),
-            "Logic and Recreation game": st.column_config.NumberColumn("Logic & Rec", width="small"),
-            "Rock-paper-scissor": st.column_config.NumberColumn("RPS", width="small"),
-            "total": st.column_config.NumberColumn("Total", width="small")
+            "Class": st.column_config.TextColumn("Class", width="small"),
+            "Dodge ball": st.column_config.NumberColumn("Dodge", width="small"),
+            "Captain ball": st.column_config.NumberColumn("Captain", width="small"),
+            "Graph-theoretical": st.column_config.NumberColumn("Graph", width="small"),
+            "Topological": st.column_config.NumberColumn("Topo", width="small"),
+            "Logic & Rec": st.column_config.NumberColumn("Logic", width="small"),
+            "RPS": st.column_config.NumberColumn("RPS", width="small"),
+            "Total": st.column_config.NumberColumn("Total", width="small")
         }
     )
