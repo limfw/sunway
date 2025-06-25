@@ -2,133 +2,125 @@ import streamlit as st
 import pandas as pd
 import requests
 import base64
-from io import StringIO
+import io
 
 # --- GitHub Config ---
 GITHUB_USERNAME = "limfw"
 GITHUB_REPO = "sunway"
-GITHUB_TOKEN = st.secrets["github"]["token"]
+GITHUB_TOKEN = st.secrets['github']['token']
+GITHUB_FOLDER = "results"
 PARTICIPANT_FILE = "participant.csv"
-SCORE_FILE = "manual_scores.csv"
+MANUAL_SCORE_FILE = "manual_scores.csv"
 
-RAW_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{SCORE_FILE}"
-API_URL = f"https://api.github.com/repos/{GITHUB_USERNAME}/{GITHUB_REPO}/contents/{SCORE_FILE}"
+# --- Load RPS Results (Game 1) ---
+@st.cache_data(ttl=30)
+def load_rps_results():
+    url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{GITHUB_REPO}/contents/{GITHUB_FOLDER}"
+    headers = {"Authorization": f"Bearer {GITHUB_TOKEN}"}
+    resp = requests.get(url, headers=headers)
 
-# Game name mappings (UPDATED)
-GAME_NAMES = {
-    "game1": "Rock-paper-scissors",
-    "game2": "Dodge ball",
-    "game3": "Captain ball",
-    "game4": "Graph-theoretical",
-    "game5": "Topological",
-    "game6": "Logic & Recreation"
-}
+    results = []
+    if resp.status_code == 200:
+        for file in resp.json():
+            if file["name"].endswith(".json"):
+                json_url = file["download_url"]
+                data = requests.get(json_url).json()
+                results.append(data)
+    return pd.DataFrame(results)
 
-# --- Load Participant Info ---
+# --- Load participant.csv ---
 @st.cache_data(ttl=60)
-def load_class_list():
+def load_participant_info():
     url = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{PARTICIPANT_FILE}"
-    df = pd.read_csv(url)
-    df["Class"] = df["Class"].astype(str).str.strip().str.upper()
-    return sorted(df["Class"].unique())
+    return pd.read_csv(url)
 
-# --- Load Scores from GitHub ---
-@st.cache_data(ttl=60)
-def load_scores():
-    df = pd.read_csv(RAW_URL)
-    df["Class"] = df["Class"].astype(str).str.strip().str.upper()
-    return df
+# --- Load manual_scores.csv (Base64 GitHub API) ---
+@st.cache_data(ttl=30)
+def load_manual_scores():
+    url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{GITHUB_REPO}/contents/{MANUAL_SCORE_FILE}"
+    headers = {"Authorization": f"Bearer {GITHUB_TOKEN}"}
+    response = requests.get(url, headers=headers)
 
-# --- GitHub Upload Function ---
-def upload_to_github(updated_df):
-    headers = {
-        "Authorization": f"Bearer {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github+json"
-    }
-
-    # Step 1: Get current SHA of file
-    get_resp = requests.get(API_URL, headers=headers)
-    if get_resp.status_code != 200:
-        st.error(f"❌ Failed to fetch file SHA: {get_resp.text}")
-        return False
-
-    sha = get_resp.json()["sha"]
-
-    # Step 2: Prepare content
-    csv_content = updated_df.to_csv(index=False)
-    encoded_content = base64.b64encode(csv_content.encode("utf-8")).decode("utf-8")
-
-    data = {
-        "message": "✅ Update manual_scores.csv via score_entry_app",
-        "content": encoded_content,
-        "branch": "main",
-        "sha": sha
-    }
-
-    # Step 3: PUT request to update file
-    put_resp = requests.put(API_URL, headers=headers, json=data)
-    if put_resp.status_code == 200:
-        return True
+    if response.status_code == 200:
+        content = response.json()["content"]
+        decoded = base64.b64decode(content)
+        return pd.read_csv(io.StringIO(decoded.decode()))
     else:
-        st.error(f"❌ Upload failed: {put_resp.status_code} – {put_resp.text}")
-        return False
+        st.error("❌ Failed to load manual_scores.csv from GitHub")
+        return pd.DataFrame()
+
+# --- Build Team-Level Leaderboard ---
+def build_team_leaderboard():
+    rps_df = load_rps_results()
+    part_df = load_participant_info()
+    score_df = load_manual_scores()
+
+    rps_df["team_code"] = rps_df["team_code"].astype(str).str.strip().str.upper()
+    part_df["team_code"] = part_df["team_code"].astype(str).str.strip().str.upper()
+    part_df["Class"] = part_df["Class"].astype(str).str.strip().str.upper()
+    score_df["Class"] = score_df["Class"].astype(str).str.strip().str.upper()
+
+    if rps_df.empty:
+        rps_df = pd.DataFrame(columns=['team_code', 'win', 'timestamp'])
+
+    rps_df = pd.merge(rps_df, part_df, on="team_code", how="left")
+    team_rps = rps_df.groupby("Class")['win'].sum().reset_index(name="game1")
+    all_teams = part_df[['Class']].drop_duplicates()
+    team_rps = pd.merge(all_teams, team_rps, on="Class", how="left").fillna({"game1": 0})
+    merged = pd.merge(score_df, team_rps, on="Class", how="left").fillna(0)
+
+    score_cols = ['game1', 'game2', 'game3', 'game4', 'game5', 'game6']
+    merged['total'] = merged[score_cols].sum(axis=1)
+
+    return merged.sort_values("total", ascending=False).reset_index(drop=True)
 
 # --- Streamlit UI ---
-st.set_page_config(page_title="Enter Game Scores", layout="centered")
-st.title("🎯 Game Score Entry Portal")
-st.info("Select a game and enter scores for each class.")
+st.set_page_config("🏆 MATRIX Leaderboard", layout="centered")
+st.title("🏆 Top Teams Across All 6 Games")
 
-# --- Game Selector ---
-game_option = st.selectbox(
-    "Select game to enter score:", 
-    options=list(GAME_NAMES.keys()),
-    format_func=lambda x: GAME_NAMES[x]
-)
+# --- Manual Refresh Button ---
+if st.button("🔁 Refresh Leaderboard Now"):
+    st.cache_data.clear()
+    st.experimental_rerun()
 
-# --- Load Data ---
-all_classes = load_class_list()
-scores_df = load_scores()
+df = build_team_leaderboard()
 
-# --- Ensure all classes exist ---
-for c in all_classes:
-    if c not in scores_df["Class"].values:
-        new_row = {"Class": c}
-        for g in range(1, 7):
-            new_row[f"game{g}"] = 0
-        scores_df = pd.concat([scores_df, pd.DataFrame([new_row])], ignore_index=True)
+if df.empty:
+    st.warning("No results available yet.")
+else:
+    st.markdown("## 🏅 Top 3 Teams")
 
-scores_df["Class"] = scores_df["Class"].astype(str).str.strip().str.upper()
-scores_df = scores_df.drop_duplicates("Class").reset_index(drop=True)
+    def format_class(c): return str(c).upper().strip()
 
-# --- Score Entry UI ---
-st.markdown(f"### 📝 Enter scores for {GAME_NAMES[game_option]}")
-updated_scores = {}
-for c in all_classes:
-    score = st.number_input(f"Team {c} score:", min_value=0, max_value=100, step=1, key=c)
-    updated_scores[c] = score
+    top3 = df.head(3).copy()
+    top3["Class"] = top3["Class"].apply(format_class)
 
-# --- Submit and Upload ---
-if st.button("✅ Submit Scores"):
-    for c in updated_scores:
-        scores_df.loc[scores_df["Class"] == c, game_option] = updated_scores[c]
+    st.markdown(
+        f"""
+        <div style='display: flex; justify-content: center; align-items: flex-end; gap: 40px; margin-top: 30px;'>
+            <div style='flex:1; background:#E0E0E0; padding:15px; border-radius:20px; text-align:center; box-shadow:2px 2px 8px rgba(0,0,0,0.2);'>
+                <div style='font-size: 40px;'>🥈</div>
+                <div style='font-size: 20px; font-weight:bold;'>{top3.iloc[1]["Class"]}</div>
+                <div style='font-size: 18px;'>{int(top3.iloc[1]["total"])} pts</div>
+            </div>
+            <div style='flex:1.2; background:#FFD700; padding:20px; border-radius:20px; text-align:center; transform: scale(1.1); box-shadow:2px 2px 10px rgba(0,0,0,0.4);'>
+                <div style='font-size: 60px;'>🏆</div>
+                <div style='font-size: 24px; font-weight:bold;'>Champion</div>
+                <div style='font-size: 22px; font-weight:bold; margin-top:5px;'>{top3.iloc[0]["Class"]}</div>
+                <div style='font-size: 20px;'>{int(top3.iloc[0]["total"])} pts</div>
+            </div>
+            <div style='flex:1; background:#CD7F32; padding:15px; border-radius:20px; text-align:center; box-shadow:2px 2px 8px rgba(0,0,0,0.2);'>
+                <div style='font-size: 38px;'>🥉</div>
+                <div style='font-size: 20px; font-weight:bold;'>{top3.iloc[2]["Class"]}</div>
+                <div style='font-size: 18px;'>{int(top3.iloc[2]["total"])} pts</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-    # Recalculate Total Score
-    game_order = ["game2", "game3", "game4", "game5", "game6", "game1"]
-    scores_df["Total"] = scores_df[game_order].sum(axis=1)
-
-    # Reorder columns
-    ordered_cols = ["Class"] + game_order + ["Total"]
-    scores_df = scores_df[ordered_cols]
-
-    if upload_to_github(scores_df):
-        st.success("✅ Scores updated successfully to GitHub!")
-    else:
-        st.error("❌ Failed to upload scores.")
-
-# --- Display Leaderboard ---
-st.markdown("## 🏆 Leaderboard (Sorted by Total Score)")
-game_order = ["game2", "game3", "game4", "game5", "game6", "game1"]
-scores_df["Total"] = scores_df[game_order].sum(axis=1)
-ordered_cols = ["Class"] + game_order + ["Total"]
-leaderboard = scores_df[ordered_cols].sort_values(by="Total", ascending=False).reset_index(drop=True)
-st.dataframe(leaderboard, use_container_width=True)
+    st.markdown("## 📋 Full Results")
+    st.dataframe(
+        df[['Class', 'game2', 'game3', 'game4', 'game5', 'game6', 'game1', 'total']],
+        use_container_width=True
+    )
