@@ -129,6 +129,6 @@ else:
 
     st.markdown("## 📋 Full Results")
     st.dataframe(
-        df[['Class', 'game1', 'game2', 'game3', 'game4', 'game5', 'game6', 'total']],
+        df[['Class', 'game2', 'game3', 'game4', 'game5', 'game6','game1', 'total']],
         use_container_width=True
     )
