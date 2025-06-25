@@ -156,12 +156,12 @@ else:
         height=(len(display_df) * 35 + 35),
         column_config={
             "Class": st.column_config.TextColumn("Class", width="small"),
-            "Dodge ball": st.column_config.NumberColumn("Dodge", width="small"),
-            "Captain ball": st.column_config.NumberColumn("Captain", width="small"),
-            "Graph-theoretical": st.column_config.NumberColumn("Graph", width="small"),
-            "Topological": st.column_config.NumberColumn("Topo", width="small"),
-            "Logic & Rec": st.column_config.NumberColumn("Logic", width="small"),
-            "RPS": st.column_config.NumberColumn("RPS", width="small"),
+            "Dodge ball": st.column_config.NumberColumn("Dodgeball", width="small"),
+            "Captain ball": st.column_config.NumberColumn("Captain Ball", width="small"),
+            "Graph-theoretical": st.column_config.NumberColumn("Graph-theoretical", width="small"),
+            "Topological": st.column_config.NumberColumn("Topological", width="small"),
+            "Logic & Rec": st.column_config.NumberColumn("Logic and Recreation", width="small"),
+            "RPS": st.column_config.NumberColumn("Rock-paper-scissor", width="small"),
             "Total": st.column_config.NumberColumn("Total", width="small")
         }
     )
