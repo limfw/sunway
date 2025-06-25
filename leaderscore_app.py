@@ -5,130 +5,101 @@ import requests
 # --- GitHub Config ---
 GITHUB_USERNAME = "limfw"
 GITHUB_REPO = "sunway"
-GITHUB_TOKEN = st.secrets['github']['token']
-GITHUB_FOLDER = "results"
-PARTICIPANT_FILE = "participant.csv"
-MANUAL_SCORE_FILE = "manual_scores.csv"
+SCORE_FILE = "manual_scores.csv"
+RAW_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{SCORE_FILE}"
 
-# --- Load RPS Results (Game 1) ---
-@st.cache_data(ttl=30)
-def load_rps_results():
-    url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{GITHUB_REPO}/contents/{GITHUB_FOLDER}"
-    headers = {"Authorization": f"Bearer {GITHUB_TOKEN}"}
-    resp = requests.get(url, headers=headers)
+# Game name mappings (with game1 added last)
+GAME_NAMES = {
+    "game2": "DodgeBall",
+    "game3": "Captain Ball",
+    "game4": "Graph-Theoretical",
+    "game5": "Topological",
+    "game6": "Logic and Recreation",
+    "game1": "Rock-paper-scissors"  # Added last as requested
+}
 
-    results = []
-    if resp.status_code == 200:
-        for file in resp.json():
-            if file["name"].endswith(".json"):
-                json_url = file["download_url"]
-                data = requests.get(json_url).json()
-                results.append(data)
-    return pd.DataFrame(results)
-
-# --- Load participant.csv ---
+# --- Load Scores ---
 @st.cache_data(ttl=60)
-def load_participant_info():
-    url = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{PARTICIPANT_FILE}"
-    return pd.read_csv(url)
+def load_scores():
+    df = pd.read_csv(RAW_URL)
+    df["Class"] = df["Class"].astype(str).str.strip().str.upper()
+    return df
 
-# --- Load manual_scores.csv ---
-#@st.cache_data(ttl=30)
-#def load_manual_scores():
-#    url = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/{MANUAL_SCORE_FILE}"
-#    return pd.read_csv(url)
-
-import base64
-import io
-
-@st.cache_data(ttl=30)
-def load_manual_scores():
-    url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{GITHUB_REPO}/contents/{MANUAL_SCORE_FILE}"
-    headers = {"Authorization": f"Bearer {GITHUB_TOKEN}"}
-    response = requests.get(url, headers=headers)
+# --- Calculate Leaderboard ---
+def calculate_leaderboard(df):
+    # Get columns in desired order (game1 last)
+    game_columns = [col for col in df.columns if col.startswith("game")]
+    game_columns = sorted(game_columns, key=lambda x: (x != "game1", x))  # game1 last
     
-    if response.status_code == 200:
-        content = response.json()["content"]
-        decoded = base64.b64decode(content)
-        return pd.read_csv(io.StringIO(decoded.decode()))
-    else:
-        st.error("❌ Failed to load manual_scores.csv from GitHub")
-        return pd.DataFrame()
-
-
-# --- Build Team-Level Leaderboard ---
-def build_team_leaderboard():
-    rps_df = load_rps_results()
-    part_df = load_participant_info()
-    score_df = load_manual_scores()
-
-    rps_df["team_code"] = rps_df["team_code"].astype(str).str.strip().str.upper()
-    part_df["team_code"] = part_df["team_code"].astype(str).str.strip().str.upper()
-    part_df["Class"] = part_df["Class"].astype(str).str.strip().str.upper()
-    score_df["Class"] = score_df["Class"].astype(str).str.strip().str.upper()
-
-    if rps_df.empty:
-        rps_df = pd.DataFrame(columns=['team_code', 'win', 'timestamp'])
-
-    rps_df = pd.merge(rps_df, part_df, on="team_code", how="left")
-    team_rps = rps_df.groupby("Class")['win'].sum().reset_index(name="game1")
-    all_teams = part_df[['Class']].drop_duplicates()
-    team_rps = pd.merge(all_teams, team_rps, on="Class", how="left").fillna({"game1": 0})
-    merged = pd.merge(score_df, team_rps, on="Class", how="left").fillna(0)
-
-    score_cols = ['game1', 'game2', 'game3', 'game4', 'game5', 'game6']
-    merged['total'] = merged[score_cols].sum(axis=1)
-
-    return merged.sort_values("total", ascending=False).reset_index(drop=True)
+    # Calculate totals
+    df['Total'] = df[game_columns].sum(axis=1)
+    df['Rank'] = df['Total'].rank(method='min', ascending=False).astype(int)
+    
+    # Return sorted with custom column order
+    return df.sort_values('Rank')[['Rank', 'Class', 'Total'] + game_columns]
 
 # --- Streamlit UI ---
-st.set_page_config("🏆 MATRIX Leaderboard", layout="centered")
-st.title("🏆Top Teams Across All 6 Games")
+st.set_page_config(page_title="Game Leaderboard", layout="wide")
+st.title("🏆 Tournament Leaderboard")
 
-# --- Manual Refresh Button ---
-if st.button("🔁 Refresh Leaderboard Now"):
+try:
+    scores_df = load_scores()
+    leaderboard = calculate_leaderboard(scores_df)
+    
+    # --- Overall Rankings Tab ---
+    tab1, tab2 = st.tabs(["Overall Ranking", "By Game"])
+    
+    with tab1:
+        st.header("Overall Standings")
+        
+        # Custom column configuration
+        column_config = {
+            "Rank": st.column_config.NumberColumn(width="small"),
+            "Class": st.column_config.TextColumn("Team", width="medium"),
+            "Total": st.column_config.NumberColumn("Total Score", width="small")
+        }
+        
+        # Add game columns with proper names
+        for col in leaderboard.columns:
+            if col.startswith("game"):
+                column_config[col] = st.column_config.NumberColumn(
+                    GAME_NAMES.get(col, col),
+                    width="small"
+                )
+        
+        st.dataframe(
+            leaderboard,
+            column_config=column_config,
+            hide_index=True,
+            use_container_width=True
+        )
+    
+    with tab2:
+        st.header("Individual Game Rankings")
+        selected_game = st.selectbox(
+            "Select Game:",
+            options=list(GAME_NAMES.keys()),
+            format_func=lambda x: GAME_NAMES[x],
+            index=1  # Start selection at game2 (index 0 would be game1)
+        )
+        
+        game_df = scores_df[['Class', selected_game]].sort_values(
+            selected_game, ascending=False
+        ).reset_index(drop=True)
+        game_df.insert(0, 'Rank', range(1, len(game_df)+1))
+        
+        st.dataframe(
+            game_df,
+            column_config={
+                selected_game: st.column_config.NumberColumn(GAME_NAMES[selected_game])
+            },
+            use_container_width=True
+        )
+
+except Exception as e:
+    st.error(f"❌ Error loading data: {str(e)}")
+    st.info("Please ensure scores.csv exists in the GitHub repo.")
+
+if st.button("🔄 Refresh Data"):
     st.cache_data.clear()
-    st.experimental_rerun()
-
-
-df = build_team_leaderboard()
-
-if df.empty:
-    st.warning("No results available yet.")
-else:
-    st.markdown("## 🏅 Top 3 Teams")
-
-    def format_class(c): return str(c).upper().strip()
-
-    top3 = df.head(3).copy()
-    top3["Class"] = top3["Class"].apply(format_class)
-
-    st.markdown(
-        f"""
-        <div style='display: flex; justify-content: center; align-items: flex-end; gap: 40px; margin-top: 30px;'>
-            <div style='flex:1; background:#E0E0E0; padding:15px; border-radius:20px; text-align:center; box-shadow:2px 2px 8px rgba(0,0,0,0.2);'>
-                <div style='font-size: 40px;'>🥈</div>
-                <div style='font-size: 20px; font-weight:bold;'>{top3.iloc[1]["Class"]}</div>
-                <div style='font-size: 18px;'>{int(top3.iloc[1]["total"])} pts</div>
-            </div>
-            <div style='flex:1.2; background:#FFD700; padding:20px; border-radius:20px; text-align:center; transform: scale(1.1); box-shadow:2px 2px 10px rgba(0,0,0,0.4);'>
-                <div style='font-size: 60px;'>🏆</div>
-                <div style='font-size: 24px; font-weight:bold;'>Champion</div>
-                <div style='font-size: 22px; font-weight:bold; margin-top:5px;'>{top3.iloc[0]["Class"]}</div>
-                <div style='font-size: 20px;'>{int(top3.iloc[0]["total"])} pts</div>
-            </div>
-            <div style='flex:1; background:#CD7F32; padding:15px; border-radius:20px; text-align:center; box-shadow:2px 2px 8px rgba(0,0,0,0.2);'>
-                <div style='font-size: 38px;'>🥉</div>
-                <div style='font-size: 20px; font-weight:bold;'>{top3.iloc[2]["Class"]}</div>
-                <div style='font-size: 18px;'>{int(top3.iloc[2]["total"])} pts</div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    st.markdown("## 📋 Full Results")
-    st.dataframe(
-        df[['Class', 'game1', 'game2', 'game3', 'game4', 'game5', 'game6', 'total']],
-        use_container_width=True
-    )
+    st.rerun()
