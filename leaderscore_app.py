@@ -123,10 +123,10 @@ else:
     st.markdown("## 📋 Full Results")
 
     DISPLAY_NAMES = {
-        "game1": "Rock-paper-scissors",
-        "game2": "Dodge ball",
-        "game3": "Captain ball",
-        "game4": "Graph-theoretical",
+        "game1": "Rock-Paper-Scissors",
+        "game2": "Dodgeball",
+        "game3": "Captain Ball",
+        "game4": "Graph Theoretical",
         "game5": "Topological",
         "game6": "Logic & Recreation"
     }
