@@ -11,7 +11,7 @@ import uuid
 # --- Label Map ---
 label_full = {'R': '✊ Rock', 'P': '✋ Paper', 'S': '✌️ Scissors'}
 
-@st.cache_data(ttl=60)
+# @st.cache_data(ttl=60)
 def is_team_code_used(team_code):
     github_username = st.secrets['github']['username']
     github_repo = st.secrets['github']['repo']
