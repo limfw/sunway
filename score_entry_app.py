@@ -102,8 +102,16 @@ scores_df = scores_df.drop_duplicates("Class").reset_index(drop=True)
 # --- Score Entry UI ---
 st.markdown(f"### 📝 Enter scores for {GAME_NAMES[game_option]}")
 updated_scores = {}
+
 for c in all_classes:
-    score = st.number_input(f"Team {c} score:", min_value=0, max_value=100, step=1, key=c)
+    # Fetch previous score for the selected game, or 0 if not available
+    prev_score = scores_df.loc[scores_df["Class"] == c, game_option].values[0]
+    score = st.number_input(
+        f"Team {c} score:", 
+        min_value=0, max_value=100, step=1, 
+        value=int(prev_score) if pd.notna(prev_score) else 0, 
+        key=c
+    )
     updated_scores[c] = score
 
 if st.button("✅ Submit Scores"):
