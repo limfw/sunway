@@ -104,12 +104,16 @@ st.markdown(f"### 📝 Enter scores for {GAME_NAMES[game_option]}")
 updated_scores = {}
 
 for c in all_classes:
-    # Fetch previous score for the selected game, or 0 if not available
-    prev_score = scores_df.loc[scores_df["Class"] == c, game_option].values[0]
+    class_row = scores_df[scores_df["Class"].str.strip().str.upper() == c]
+    if not class_row.empty:
+        prev_score = class_row[game_option].values[0]
+    else:
+        prev_score = 0
+
     score = st.number_input(
-        f"Team {c} score:", 
-        min_value=0, max_value=100, step=1, 
-        value=int(prev_score) if pd.notna(prev_score) else 0, 
+        f"Team {c} score:",
+        min_value=0, max_value=100, step=1,
+        value=int(prev_score) if pd.notna(prev_score) else 0,
         key=c
     )
     updated_scores[c] = score
